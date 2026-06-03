@@ -1,7 +1,6 @@
 package http
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -9,11 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"iracus-logistic/backend/internal/http/handlers"
+	"iracus-logistic/backend/internal/shipment"
 )
 
 type RouterDeps struct {
-	DB     *pgxpool.Pool
-	Logger *slog.Logger
+	DB              *pgxpool.Pool
+	ShipmentService shipment.ServiceAPI
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -25,9 +25,18 @@ func NewRouter(deps RouterDeps) http.Handler {
 	router.Use(corsMiddleware)
 
 	healthHandler := handlers.NewHealthHandler(deps.DB)
+	shipmentHandler := handlers.NewShipmentRequestHandler(deps.ShipmentService)
 
 	router.Route("/api", func(router chi.Router) {
 		router.Get("/health", healthHandler.Handle)
+		router.Route("/shipment-requests", func(router chi.Router) {
+			router.Get("/", shipmentHandler.List)
+			router.Post("/", shipmentHandler.Create)
+			router.Route("/{id}", func(router chi.Router) {
+				router.Get("/", shipmentHandler.Get)
+				router.Patch("/", shipmentHandler.Update)
+			})
+		})
 	})
 
 	return router

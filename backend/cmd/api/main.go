@@ -12,6 +12,7 @@ import (
 	"iracus-logistic/backend/internal/config"
 	"iracus-logistic/backend/internal/db"
 	apphttp "iracus-logistic/backend/internal/http"
+	"iracus-logistic/backend/internal/shipment"
 )
 
 func main() {
@@ -30,9 +31,17 @@ func main() {
 	}
 	defer pool.Close()
 
+	shipmentStore := shipment.NewPGStore(pool)
+	if err := shipmentStore.EnsureSchema(ctx); err != nil {
+		logger.Error("ensure shipment schema", "error", err)
+		os.Exit(1)
+	}
+
+	shipmentService := shipment.NewService(shipmentStore)
+
 	router := apphttp.NewRouter(apphttp.RouterDeps{
-		DB:     pool,
-		Logger: logger,
+		DB:              pool,
+		ShipmentService: shipmentService,
 	})
 
 	server := &http.Server{

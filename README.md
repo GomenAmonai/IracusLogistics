@@ -33,8 +33,24 @@ npm install
 npm run dev
 ```
 
-Health check:
+## Current MVP
+
+- public form for shipment requests
+- Postgres persistence
+- admin list with status and manager comment
+
+## API
 
 ```bash
 curl http://localhost:8080/api/health
+curl http://localhost:8080/api/shipment-requests
 ```
+
+```http
+POST /api/shipment-requests
+GET /api/shipment-requests
+GET /api/shipment-requests/{id}
+PATCH /api/shipment-requests/{id}
+```
+
+Frontend reads the backend URL from `VITE_API_URL` and defaults to `http://localhost:8080`.
