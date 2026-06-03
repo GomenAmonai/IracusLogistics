@@ -1,42 +1,176 @@
-:root {
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  color-scheme: light;
-  --bg: #eff3f8;
-  --text-strong: #102033;
-  --text-muted: #637488;
-  --border: #d7dee8;
-  --accent: #1b4d84;
-  color: var(--text-strong);
-  background:
-    radial-gradient(circle at top left, rgba(27, 77, 132, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(246, 182, 66, 0.18), transparent 24%),
-    linear-gradient(180deg, #f7f9fc 0%, var(--bg) 100%);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import 'tailwindcss';
+
+/* ── Дизайн-токены Iracus · «Фрахтовое досье» ──────────────────────────────
+   Тёплая бумага + чёрные чернила + один штамп-акцент (cinnabar). Эстетика
+   таможенной декларации/манифеста: разметка-линии, острые углы, плакатная
+   типографика, мотив штампа и коридора. Тёмной инверсии нет. Все значения —
+   только отсюда; в компонентах хардкода цвета нет. */
+@theme {
+  /* Поверхности — тёплая бумага */
+  --color-paper: #f1ece2; /* основной фон */
+  --color-paper-raised: #f9f5ed; /* карточки/панели — светлее бумаги */
+  --color-paper-sunk: #e7e0d2; /* утопленные зоны, подложки полей */
+
+  /* Чернила */
+  --color-ink: #17140f; /* основной текст и заголовки (~16:1) */
+  --color-ink-soft: #6a6256; /* вторичный текст, подписи (~5:1) */
+
+  /* Акцент-штамп: ровно один тёплый — действия и ключевое (белый текст AA) */
+  --color-stamp: #bc3b22;
+  --color-stamp-deep: #a02c14;
+  --color-marine: #1f4a6e; /* холодный служебный — линия маршрута, data-viz */
+
+  /* Разметка и состояния */
+  --color-rule: #d6ccbb; /* видимые границы, 1px разметка манифеста */
+  --color-rule-soft: #e3dccd; /* тихие внутренние делители */
+  --color-cargo: #256340; /* статус «в работе/доставлено», валидные поля (AA на бумаге) */
+  --color-alert: #b3402c; /* ошибки валидации формы */
+
+  /* Типографика */
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --ease-corridor: cubic-bezier(0.22, 1, 0.36, 1);
+  --breakpoint-xs: 30rem;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 4.5rem; /* учитываем sticky-шапку при якорной навигации */
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-stamp) 22%, transparent);
+  }
+
+  /* Цифры не «прыгают»: ровные табличные показания */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Видимый фокус — холодный служебный ring, никогда не убираем без замены */
+  :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-marine);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
-html {
-  min-height: 100%;
-}
+@layer components {
+  /* Надзаголовок-метка секции — строка регистрации документа */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-}
+  /* Микро-лейбл поля */
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+  /* Поле ввода: бумажная подложка, острые углы, холодный focus */
+  .input-field {
+    width: 100%;
+    background-color: var(--color-paper-raised);
+    border: 1px solid var(--color-rule);
+    border-radius: 0; /* острые углы — документ, не SaaS */
+    padding: 0.75rem 0.875rem;
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: border-color 160ms var(--ease-corridor);
+  }
 
-#root {
-  min-height: 100vh;
+  .input-field::placeholder {
+    color: var(--color-ink-soft);
+  }
+
+  .input-field:hover {
+    border-color: color-mix(in srgb, var(--color-rule) 40%, var(--color-ink-soft));
+  }
+
+  .input-field:focus-visible {
+    border-color: var(--color-marine);
+  }
+
+  /* Штамп — повёрнутый двойной кант, как оттиск таможни */
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 2px solid var(--color-stamp);
+    color: var(--color-stamp);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.875rem;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-stamp) 35%, transparent);
+  }
+
+  /* Оркестрованный page-load reveal: набегание секций снизу */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .reveal-in {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 600ms var(--ease-corridor),
+      transform 600ms var(--ease-corridor);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }

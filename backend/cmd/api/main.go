@@ -9,9 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	"iracus-logistic/backend/internal/bot"
 	"iracus-logistic/backend/internal/config"
 	"iracus-logistic/backend/internal/db"
 	apphttp "iracus-logistic/backend/internal/http"
+	"iracus-logistic/backend/internal/repository"
+	"iracus-logistic/backend/internal/service"
 )
 
 func main() {
@@ -34,7 +37,24 @@ func main() {
 		}
 	}()
 
-	router := apphttp.NewRouter(apphttp.RouterDeps{DB: gdb})
+	leadRepo := repository.NewLeadRepository(gdb)
+	managerRepo := repository.NewManagerRepository(gdb)
+
+	notifier, err := bot.New(cfg.TelegramBotToken, cfg.ManagerChatID)
+	if err != nil {
+		logger.Error("init bot", "error", err)
+		os.Exit(1)
+	}
+
+	leadService := service.NewLeadService(leadRepo, notifier)
+	authService := service.NewAuthService(managerRepo, cfg.JWTSecret, cfg.JWTTTL)
+
+	router := apphttp.NewRouter(apphttp.RouterDeps{
+		DB:          gdb,
+		LeadService: leadService,
+		AuthService: authService,
+		JWTSecret:   cfg.JWTSecret,
+	})
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,

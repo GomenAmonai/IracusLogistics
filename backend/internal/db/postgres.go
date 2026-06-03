@@ -2,14 +2,27 @@ package db
 
 import (
 	"context"
+	"log"
+	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func Connect(ctx context.Context, databaseURL string) (*gorm.DB, error) {
-	gdb, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+	// IgnoreRecordNotFoundError: "не найдено" — это нормальный исход запроса,
+	// а не ошибка БД, поэтому не засоряем им логи.
+	gormLogger := logger.New(
+		log.New(os.Stdout, "", log.LstdFlags),
+		logger.Config{
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+		},
+	)
+
+	gdb, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{Logger: gormLogger})
 	if err != nil {
 		return nil, err
 	}

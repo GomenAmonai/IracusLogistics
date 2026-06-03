@@ -2,6 +2,7 @@ package repository_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -82,7 +83,7 @@ func TestLeadRepository_GetByIDUnknownReturnsNotFound(t *testing.T) {
 
 	_, err := repo.GetByID(context.Background(), uuid.New())
 
-	if err != repository.ErrNotFound {
+	if !errors.Is(err, domain.ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }

@@ -47,10 +47,43 @@
 - `health` и `main.go` переведены на GORM; chi-роутер оставлен временно только под `/api/health` (миграция на Gin — отдельный шаг).
 - Написан `internal/repository.LeadRepository` (Create/List/GetByID) + интеграционные тесты (само-пропуск, если БД недоступна — CI без базы зелёный). Тесты проверены на живой БД: ID генерит база, `status` дефолтится в `new`, `GetByID` → `ErrNotFound`.
 
-**Текущий статус:** приложение поднимается на GORM, `/api/health` → 200. `go build`/`go vet`/`go test ./...` чисто. `manager_id` оставлен NOT NULL (подтверждено).
+- Первый сквозной срез по `Lead`: `service.LeadService` (валидация/нормализация формы, интерфейс `LeadStore` на стороне сервиса) + хендлеры.
+- **HTTP-слой переведён с chi на Gin** (chi удалён из зависимостей). Единый формат ошибок `{"error":{"code","message"}}` (`handlers/response.go`).
+- Эндпоинты: `GET /api/health`, `POST /api/leads`, `GET /api/leads`. Проверены вживую: POST → 201 (БД генерит UUID, status=new, decimal через JSON), невалидный → 400, GET → 200.
+- Логгер GORM приглушён (`IgnoreRecordNotFoundError`, уровень Warn) в `db.Connect`.
 
-**Следующий шаг:** репозитории для остальных сущностей (`Manager` — понадобится для auth, `Client`, `Shipment`, `Message`). Затем сервисный слой и переход HTTP с chi на **Gin**.
+**Текущий статус:** работает сквозной поток `Gin → service → repository → GORM → Postgres` для лидов. `go build`/`go vet`/`gofmt`/`go test ./...` чисто. Стек теперь как в AGENTS.md (Gin + GORM). `manager_id` NOT NULL (подтверждено).
+
+**Следующий шаг:** на выбор — (а) юнит-тесты `LeadService` (валидация, без БД, CI-friendly); (б) `ManagerRepository` + bcrypt + аутентификация (JWT middleware из AGENTS.md); (в) репозитории/сервисы/ручки для `Client`/`Shipment`/`Message`. Логично двигаться к auth, т.к. админка/менеджерские ручки потребуют защиты.
 
 **Открытые вопросы / мелочи:**
-- Приглушить шумный дефолтный логгер GORM (логирует `record not found` как error) — настроить `logger.Config{IgnoreRecordNotFoundError: true}` при `gorm.Open`.
-- chi → Gin: переписать HTTP-слой на Gin как отдельный шаг (сейчас на chi только health).
+- У `LeadService` пока нет юнит-тестов (валидацию стоит покрыть — чистая логика, без БД).
+- Gin стартует в debug-режиме (лог-варнинг) — для прода выставить `gin.SetMode(gin.ReleaseMode)` по `AppEnv`.
+
+### 2026-06-04
+
+**Сделано:**
+- **Бот** (`internal/bot`) — исходящие Telegram-уведомления о новом лиде + интерфейс `service.Notifier` (на стороне потребителя). Авто-ревью нашло утечку токена в ошибке `Send` (`*url.Error` содержит URL с токеном) — исправлено.
+- **Лендинг** (`frontend/`) — Vite + React + TS + Tailwind, дизайн «Iron Corridor», калькулятор (MVP-формула) + форма → `POST /api/leads`. Сборка зелёная, a11y-минорки подчищены.
+- **Фаза 2 (бэкенд) целиком:** auth менеджера (bcrypt + JWT HS256), JWT-middleware, `POST /api/auth/login`, CLI `cmd/createmanager`; защищённый CRUD лидов (`GET /leads`, `GET /leads/:id`, `PATCH /leads/:id`), публичный `POST /leads`; рефактор роутера (public/protected); бот подключён к `LeadService` (fire-and-forget в горутине).
+- Миграция `000006` (`client.lead_id` nullable FK, `ON DELETE SET NULL`) + поле `domain.Client.LeadID`. Схема **v6**.
+- Общий sentinel `domain.ErrNotFound` (перенесён из `repository`, чтобы `service` не зависел от `repository`).
+- Тесты: `AuthService` (login/bcrypt/JWT/normalize), `LeadService` (валидация/статусы), `middleware` (401/200/без-exp), `ManagerRepository` (интеграционные, само-пропуск без БД). `go build/vet/test` зелёные.
+- Адверсариальное ревью Фазы 2 (workflow, 5 агентов): 0 подтверждённых blocker/major. Исправлены security-минорки: требование `exp` в JWT (+`WithValidMethods`), анти-enumeration по таймингу (холостой bcrypt), лимит bcrypt 72 байта, nil-guards в `Login`/`notifyNewLead`. Удалён мёртвый `ClientRepository`.
+- Документация: README переписан под актуальный API; AGENTS — Фаза 2 отмечена; `docs/tech-debt.md` (14 пунктов); `docs/learning-phase2.md` — разбор к утреннему ревью.
+
+**Принятые решения:**
+- Auth: JWT (HS256) в заголовке `Authorization`, без refresh; секрет/TTL из config — MVP.
+- Создание менеджера — через CLI; bcrypt-хеш создаётся только в `AuthService.CreateManager`.
+- Интерфейсы на стороне потребителя (`ManagerStore`, `LeadStore`, `Notifier`).
+- Смена статуса лида — свободная, валидируется принадлежность enum (без стейт-машины).
+- **Конверсия Lead→Client отложена в Фазу 3** (`Client.telegram_id` NOT NULL появляется только при Telegram-auth); в Фазе 2 — статус `converted` + схема `client.lead_id`. ⚠️ Требует ратификации, см. `docs/learning-phase2.md §5`.
+
+**Текущий статус:** Фазы 1–2 готовы и проверены. `go build/vet/test` чисто, схема v6. Бот и лендинг сданы. Стек по AGENTS.md.
+
+**Следующий шаг (после утреннего ревью):** Фаза 3 — клиентский поток: Telegram-авторизация (HMAC `initData`), создание `Client` (+`ClientRepository`) с привязкой `lead_id`, генерация `tracking_key`, команда `/status`. Сперва ратифицировать решение по конверсии и кардинальность `client.lead_id`.
+
+**Открытые вопросы:**
+- Кардинальность `client.lead_id`: 1:1 (partial UNIQUE) или 1:N — решить к Фазе 3.
+- Прод-готовность: `JWT_SECRET` обязательным вне dev, CORS-белый список, `gin.ReleaseMode`, таймаут на отправку бота (tech-debt #5, #9, #12).
+- WebApp (Фаза 5) — отдельное приложение, общая дизайн-система с лендингом.

@@ -13,5 +13,7 @@ type Client struct {
 	Username   string    `gorm:"type:varchar(255)" json:"username"`
 	Name       string    `gorm:"type:varchar(255);not null" json:"name"`
 	Phone      string    `gorm:"type:varchar(255)" json:"phone"`
-	CreatedAt  time.Time `gorm:"not null;default:now()" json:"created_at"`
+	// LeadID — заявка, из которой вырос клиент. Nullable: клиент мог прийти не через форму.
+	LeadID    *uuid.UUID `gorm:"type:uuid" json:"lead_id"`
+	CreatedAt time.Time  `gorm:"not null;default:now()" json:"created_at"`
 }

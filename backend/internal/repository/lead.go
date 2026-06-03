@@ -10,8 +10,6 @@ import (
 	"iracus-logistic/backend/internal/domain"
 )
 
-var ErrNotFound = errors.New("record not found")
-
 type LeadRepository struct {
 	db *gorm.DB
 }
@@ -39,11 +37,28 @@ func (r *LeadRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Lea
 	var lead domain.Lead
 	err := r.db.WithContext(ctx).First(&lead, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrNotFound
+		return nil, domain.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	return &lead, nil
+}
+
+// UpdateStatus меняет статус лида. GORM на Update без совпадений ошибку не даёт, поэтому
+// RowsAffected == 0 трактуем как «лида с таким id нет» → domain.ErrNotFound.
+func (r *LeadRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) error {
+	result := r.db.WithContext(ctx).
+		Model(&domain.Lead{}).
+		Where("id = ?", id).
+		Update("status", status)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
 }

@@ -3,45 +3,61 @@ package http
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"iracus-logistic/backend/internal/http/handlers"
+	"iracus-logistic/backend/internal/middleware"
+	"iracus-logistic/backend/internal/service"
 )
 
 type RouterDeps struct {
-	DB *gorm.DB
+	DB          *gorm.DB
+	LeadService *service.LeadService
+	AuthService *service.AuthService
+	JWTSecret   string
 }
 
-func NewRouter(deps RouterDeps) http.Handler {
-	router := chi.NewRouter()
+func NewRouter(deps RouterDeps) *gin.Engine {
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(corsMiddleware())
 
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.Recoverer)
-	router.Use(corsMiddleware)
+	health := handlers.NewHealthHandler(deps.DB)
+	lead := handlers.NewLeadHandler(deps.LeadService)
+	auth := handlers.NewAuthHandler(deps.AuthService)
 
-	healthHandler := handlers.NewHealthHandler(deps.DB)
+	api := router.Group("/api")
+	{
+		// Публичные ручки.
+		api.GET("/health", health.Handle)
+		api.POST("/leads", lead.Create) // форма с сайта, без авторизации
+		api.POST("/auth/login", auth.Login)
 
-	router.Route("/api", func(router chi.Router) {
-		router.Get("/health", healthHandler.Handle)
-	})
+		// Защищённые: только менеджер с валидным JWT.
+		protected := api.Group("")
+		protected.Use(middleware.RequireAuth(deps.JWTSecret))
+		{
+			protected.GET("/leads", lead.List)
+			protected.GET("/leads/:id", lead.GetByID)
+			protected.PATCH("/leads/:id", lead.UpdateStatus)
+		}
+	}
 
 	return router
 }
 
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
-		next.ServeHTTP(w, r)
-	})
+		c.Next()
+	}
 }

@@ -31,3 +31,14 @@ const (
 	LeadStatusConverted LeadStatus = "converted"
 	LeadStatusRejected  LeadStatus = "rejected"
 )
+
+// IsValid сообщает, входит ли статус в допустимый набор. Сервис проверяет это при смене
+// статуса, чтобы вернуть 400, а не словить 500 от CHECK-ограничения в БД.
+func (s LeadStatus) IsValid() bool {
+	switch s {
+	case LeadStatusNew, LeadStatusContacted, LeadStatusConverted, LeadStatusRejected:
+		return true
+	default:
+		return false
+	}
+}

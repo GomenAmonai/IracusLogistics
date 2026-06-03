@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -17,8 +17,8 @@ func NewHealthHandler(db *gorm.DB) HealthHandler {
 	return HealthHandler{db: db}
 }
 
-func (h HealthHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+func (h HealthHandler) Handle(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 	defer cancel()
 
 	databaseStatus := "ok"
@@ -33,7 +33,7 @@ func (h HealthHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		apiStatus = "degraded"
 	}
 
-	writeJSON(w, status, map[string]string{
+	c.JSON(status, gin.H{
 		"status":   apiStatus,
 		"database": databaseStatus,
 	})
@@ -46,10 +46,4 @@ func pingDB(ctx context.Context, db *gorm.DB) error {
 	}
 
 	return sqlDB.PingContext(ctx)
-}
-
-func writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
 }
