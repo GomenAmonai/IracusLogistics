@@ -9,6 +9,8 @@ backend/tmp/
 .env
 backend/.env
 frontend/.env
+AGENTS.md
+PROGRESS.md
 
 # Node
 frontend/node_modules/
