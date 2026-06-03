@@ -5,15 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/gorm"
 
 	"iracus-logistic/backend/internal/http/handlers"
-	"iracus-logistic/backend/internal/shipment"
 )
 
 type RouterDeps struct {
-	DB              *pgxpool.Pool
-	ShipmentService shipment.ServiceAPI
+	DB *gorm.DB
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -25,18 +23,9 @@ func NewRouter(deps RouterDeps) http.Handler {
 	router.Use(corsMiddleware)
 
 	healthHandler := handlers.NewHealthHandler(deps.DB)
-	shipmentHandler := handlers.NewShipmentRequestHandler(deps.ShipmentService)
 
 	router.Route("/api", func(router chi.Router) {
 		router.Get("/health", healthHandler.Handle)
-		router.Route("/shipment-requests", func(router chi.Router) {
-			router.Get("/", shipmentHandler.List)
-			router.Post("/", shipmentHandler.Create)
-			router.Route("/{id}", func(router chi.Router) {
-				router.Get("/", shipmentHandler.Get)
-				router.Patch("/", shipmentHandler.Update)
-			})
-		})
 	})
 
 	return router

@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/gorm"
 )
 
 type HealthHandler struct {
-	db *pgxpool.Pool
+	db *gorm.DB
 }
 
-func NewHealthHandler(db *pgxpool.Pool) HealthHandler {
+func NewHealthHandler(db *gorm.DB) HealthHandler {
 	return HealthHandler{db: db}
 }
 
@@ -22,17 +22,14 @@ func (h HealthHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	databaseStatus := "ok"
-	if err := h.db.Ping(ctx); err != nil {
+	if err := pingDB(ctx, h.db); err != nil {
 		databaseStatus = "unavailable"
 	}
 
 	status := http.StatusOK
-	if databaseStatus != "ok" {
-		status = http.StatusServiceUnavailable
-	}
-
 	apiStatus := "ok"
 	if databaseStatus != "ok" {
+		status = http.StatusServiceUnavailable
 		apiStatus = "degraded"
 	}
 
@@ -40,6 +37,15 @@ func (h HealthHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		"status":   apiStatus,
 		"database": databaseStatus,
 	})
+}
+
+func pingDB(ctx context.Context, db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	return sqlDB.PingContext(ctx)
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {

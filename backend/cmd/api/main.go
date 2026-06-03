@@ -12,7 +12,6 @@ import (
 	"iracus-logistic/backend/internal/config"
 	"iracus-logistic/backend/internal/db"
 	apphttp "iracus-logistic/backend/internal/http"
-	"iracus-logistic/backend/internal/shipment"
 )
 
 func main() {
@@ -24,25 +23,18 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
-	pool, err := db.Connect(ctx, cfg.DatabaseURL)
+	gdb, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("connect database", "error", err)
 		os.Exit(1)
 	}
-	defer pool.Close()
+	defer func() {
+		if sqlDB, err := gdb.DB(); err == nil {
+			_ = sqlDB.Close()
+		}
+	}()
 
-	shipmentStore := shipment.NewPGStore(pool)
-	if err := shipmentStore.EnsureSchema(ctx); err != nil {
-		logger.Error("ensure shipment schema", "error", err)
-		os.Exit(1)
-	}
-
-	shipmentService := shipment.NewService(shipmentStore)
-
-	router := apphttp.NewRouter(apphttp.RouterDeps{
-		DB:              pool,
-		ShipmentService: shipmentService,
-	})
+	router := apphttp.NewRouter(apphttp.RouterDeps{DB: gdb})
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
