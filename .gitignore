@@ -1,0 +1,19 @@
+.DS_Store
+**/.DS_Store
+
+# Go
+backend/bin/
+backend/tmp/
+
+# Environment
+.env
+backend/.env
+frontend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Editor
+.vscode/
+.idea/
