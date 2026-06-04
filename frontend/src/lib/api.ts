@@ -1,6 +1,10 @@
 // Контракт публичной формы. Поля 1:1 с доменной моделью Lead на бэкенде.
 // Пустые опциональные поля (weight/volume/cargo_type/comment) в тело НЕ включаем.
 
+// Базовый URL API. Пусто (локально) → относительный /api через прокси Vite. На задеплоенном
+// фронте (Vercel) задаём VITE_API_BASE на публичный backend; бэкенд отдаёт CORS *.
+const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
+
 export type CreateLeadInput = {
   name: string
   phone: string
@@ -43,7 +47,7 @@ export class ApiError extends Error {
 export async function createLead(input: CreateLeadInput): Promise<Lead> {
   let response: Response
   try {
-    response = await fetch('/api/leads', {
+    response = await fetch(`${API_BASE}/api/leads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),

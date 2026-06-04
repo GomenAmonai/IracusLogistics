@@ -10,7 +10,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"iracus-logistic/backend/internal/config"
+	"icaris-logistic/backend/internal/config"
 )
 
 func main() {

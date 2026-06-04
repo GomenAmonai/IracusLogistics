@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"iracus-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/token"
 )
 
 // ErrInvalidCredentials — неверная пара email/пароль. Один и тот же на оба случая (нет
@@ -93,17 +93,9 @@ func (s *AuthService) CreateManager(ctx context.Context, email, name, password s
 	return manager, nil
 }
 
-// issueToken кладёт id менеджера в Subject стандартных claims и подписывает HS256.
+// issueToken подписывает менеджерский JWT: Subject = id менеджера, Role = manager.
 func (s *AuthService) issueToken(managerID uuid.UUID) (string, error) {
-	now := time.Now()
-	claims := jwt.RegisteredClaims{
-		Subject:   managerID.String(),
-		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString(s.secret)
+	return token.Issue(s.secret, managerID, domain.RoleManager, s.ttl)
 }
 
 func normalizeEmail(email string) string {

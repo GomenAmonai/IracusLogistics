@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"iracus-logistic/backend/internal/domain"
-	"iracus-logistic/backend/internal/service"
+	"icaris-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/service"
 )
 
 type LeadHandler struct {

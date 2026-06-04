@@ -138,12 +138,12 @@ export function LeadForm({ prefill }: LeadFormProps) {
       <Section id="lead" surface eyebrow="Заявка">
         <div
           role="status"
-          className="mx-auto max-w-xl border border-rule bg-paper-raised p-8 text-center"
+          className="mx-auto max-w-xl rounded-2xl border border-line bg-surface p-8 text-center shadow-soft"
         >
-          {/* Печать «принято» — единственный акцент-штамп блока */}
+          {/* Мягкий cargo-бейдж «принято» — спокойный статус успеха */}
           <span
             aria-hidden="true"
-            className="mx-auto mb-6 inline-flex items-center gap-2 border-2 border-cargo px-3 py-1.5 font-mono text-sm font-semibold uppercase tracking-[0.12em] text-cargo"
+            className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full bg-cargo/10 px-4 py-1.5 text-sm font-semibold text-cargo"
           >
             ✓ Принято
           </span>
@@ -154,14 +154,14 @@ export function LeadForm({ prefill }: LeadFormProps) {
             Менеджер свяжется с вами в течение {RESPONSE_HOURS} часов и зафиксирует точную
             стоимость после проверки документов.
           </p>
-          <p className="tabular mt-6 border-t border-rule pt-5 font-mono text-sm uppercase tracking-[0.06em] text-ink-soft">
+          <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 border-t border-line-soft pt-5 text-sm text-ink-soft">
             Номер заявки:{' '}
-            <span className="text-ink">{status.leadId}</span>
+            <span className="terminal break-all text-sm font-semibold">{status.leadId}</span>
           </p>
           <button
             type="button"
             onClick={() => setStatus({ kind: 'idle' })}
-            className="mt-6 inline-flex items-center justify-center border border-ink px-5 py-2.5 font-mono text-sm font-medium uppercase tracking-[0.06em] text-ink transition-colors duration-200 hover:bg-ink hover:text-paper"
+            className="mt-6 inline-flex items-center justify-center rounded-full border border-line bg-surface px-6 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:border-accent hover:text-accent"
           >
             Отправить ещё одну
           </button>
@@ -181,10 +181,10 @@ export function LeadForm({ prefill }: LeadFormProps) {
       intro={`Ответим в течение ${RESPONSE_HOURS} часов в рабочее время. Регистрация не нужна.`}
     >
       <form className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]" onSubmit={handleSubmit} noValidate>
-        <div className="grid gap-5 border border-rule bg-paper-raised p-6 sm:grid-cols-2 sm:p-8">
+        <div className="grid gap-5 rounded-2xl border border-line bg-surface p-6 shadow-soft sm:grid-cols-2 sm:p-8">
           <div>
             <label htmlFor="lead-name" className="field-label mb-2 block">
-              Имя <span className="text-stamp">*</span>
+              Имя <span className="text-accent">*</span>
             </label>
             <input
               id="lead-name"
@@ -205,7 +205,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
 
           <div>
             <label htmlFor="lead-phone" className="field-label mb-2 block">
-              Телефон или Telegram <span className="text-stamp">*</span>
+              Телефон или Telegram <span className="text-accent">*</span>
             </label>
             <input
               id="lead-phone"
@@ -226,7 +226,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
 
           <div>
             <label htmlFor="lead-from" className="field-label mb-2 block">
-              Город отправки <span className="text-stamp">*</span>
+              Город отправки <span className="text-accent">*</span>
             </label>
             <input
               id="lead-from"
@@ -246,7 +246,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
 
           <div>
             <label htmlFor="lead-to" className="field-label mb-2 block">
-              Город назначения <span className="text-stamp">*</span>
+              Город назначения <span className="text-accent">*</span>
             </label>
             <input
               id="lead-to"
@@ -325,7 +325,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
               <input
                 id="lead-consent"
                 type="checkbox"
-                className="mt-1 h-4 w-4 shrink-0 accent-stamp"
+                className="mt-1 h-4 w-4 shrink-0 accent-accent"
                 checked={form.consent}
                 onChange={(event) => update('consent', event.target.checked)}
                 aria-invalid={Boolean(fieldErrors.consent)}
@@ -344,28 +344,43 @@ export function LeadForm({ prefill }: LeadFormProps) {
         </div>
 
         {/* Сайдбар действия */}
-        <aside className="flex flex-col gap-5 border border-rule bg-paper-raised p-6 sm:p-8">
+        <aside className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-6 shadow-soft sm:p-8">
           <div>
-            <p className="eyebrow mb-3">Что дальше</p>
-            {/* Реестр шагов: нумерованные ruled-строки, как позиции манифеста */}
-            <ul className="border-t border-rule">
-              <li className="flex gap-4 border-b border-rule py-3 text-sm leading-relaxed text-ink-soft">
-                <span aria-hidden="true" className="font-mono text-ink-soft">01</span>
+            <p className="eyebrow mb-4">Что дальше</p>
+            {/* Мягкие шаги: кобальтовый порядковый чип ведёт взгляд по процессу */}
+            <ul className="flex flex-col gap-4">
+              <li className="flex gap-3 text-sm leading-relaxed text-ink-soft">
+                <span
+                  aria-hidden="true"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-tint font-mono text-xs font-semibold text-accent"
+                >
+                  01
+                </span>
                 Менеджер проверит вводные и документы по грузу.
               </li>
-              <li className="flex gap-4 border-b border-rule py-3 text-sm leading-relaxed text-ink-soft">
-                <span aria-hidden="true" className="font-mono text-ink-soft">02</span>
+              <li className="flex gap-3 text-sm leading-relaxed text-ink-soft">
+                <span
+                  aria-hidden="true"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-tint font-mono text-xs font-semibold text-accent"
+                >
+                  02
+                </span>
                 Зафиксирует точную стоимость и срок.
               </li>
-              <li className="flex gap-4 border-b border-rule py-3 text-sm leading-relaxed text-ink-soft">
-                <span aria-hidden="true" className="font-mono text-ink-soft">03</span>
+              <li className="flex gap-3 text-sm leading-relaxed text-ink-soft">
+                <span
+                  aria-hidden="true"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-tint font-mono text-xs font-semibold text-accent"
+                >
+                  03
+                </span>
                 Свяжется с вами выбранным способом.
               </li>
             </ul>
           </div>
 
           {status.kind === 'error' && (
-            <p role="alert" className="border border-alert px-4 py-3 text-sm text-alert">
+            <p role="alert" className="rounded-xl border border-alert/40 bg-alert/5 px-4 py-3 text-sm text-alert">
               {status.message}
             </p>
           )}
@@ -373,7 +388,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center bg-stamp px-6 py-3.5 font-mono text-sm font-semibold uppercase tracking-[0.08em] text-paper transition-colors duration-200 hover:bg-stamp-deep disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3.5 text-base font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-60"
             aria-busy={isSubmitting}
           >
             {isSubmitting ? 'Отправляем…' : 'Отправить заявку'}

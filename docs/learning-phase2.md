@@ -151,7 +151,7 @@ docker compose up -d postgres
 cd backend && go run ./cmd/migrate up
 
 # менеджер
-go run ./cmd/createmanager -email=admin@iracus.io -name="Админ" -password=secret
+go run ./cmd/createmanager -email=admin@icaris.io -name="Админ" -password=secret
 
 # API (в отдельном терминале)
 go run ./cmd/api
@@ -159,7 +159,7 @@ go run ./cmd/api
 # логин → токен
 TOKEN=$(curl -s -X POST localhost:8080/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@iracus.io","password":"secret"}' | jq -r .token)
+  -d '{"email":"admin@icaris.io","password":"secret"}' | jq -r .token)
 
 # без токена — должно быть 401
 curl -i localhost:8080/api/leads

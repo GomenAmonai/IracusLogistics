@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"iracus-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/domain"
 )
 
 type LeadRepository struct {

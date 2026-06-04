@@ -1,4 +1,4 @@
-# Iracus Logistic Architecture
+# IcarisLogistics Architecture
 
 ## Назначение Документа
 

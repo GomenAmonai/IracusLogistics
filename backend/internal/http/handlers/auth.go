@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"iracus-logistic/backend/internal/service"
+	"icaris-logistic/backend/internal/service"
 )
 
 type AuthHandler struct {

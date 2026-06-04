@@ -14,20 +14,20 @@ export function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 border-b border-rule bg-paper/90 backdrop-blur-md">
-      <div className="mx-auto flex h-[4.5rem] w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
-        <a href="#top" className="flex items-center gap-2.5" aria-label="Iracus Logistics, на главную">
+    <header className="sticky top-0 z-50 border-b border-line bg-base/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
+        <a href="#top" className="flex items-center gap-2.5" aria-label="IcarisLogistics, на главную">
           <span
             aria-hidden="true"
-            className="flex h-7 w-7 items-center justify-center border border-ink font-mono text-sm font-bold text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-surface"
           >
             I
           </span>
-          <span className="font-display text-lg font-extrabold uppercase tracking-[-0.01em] text-ink">
-            Iracus
+          <span className="font-display text-lg font-extrabold tracking-[-0.01em] text-ink">
+            Icaris
           </span>
-          <span className="hidden font-mono text-xs tracking-[0.1em] text-ink-soft xs:inline">
-            CN→RU
+          <span className="hidden font-mono text-xs tracking-wide text-ink-soft xs:inline">
+            CN&nbsp;→&nbsp;RU
           </span>
         </a>
 
@@ -36,7 +36,7 @@ export function Header() {
             <a
               key={link.href}
               href={link.href}
-              className="font-mono text-xs uppercase tracking-[0.06em] text-ink-soft transition-colors duration-200 hover:text-ink"
+              className="text-sm text-ink-soft transition-colors duration-200 hover:text-ink"
             >
               {link.label}
             </a>
@@ -52,19 +52,19 @@ export function Header() {
           </a>
           <a
             href="#lead"
-            className="hidden bg-stamp px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.06em] text-paper transition-colors duration-200 hover:bg-stamp-deep sm:inline-block"
+            className="hidden rounded-full bg-accent px-5 py-2 text-sm font-semibold text-surface transition-colors duration-200 hover:bg-accent-deep sm:inline-block"
           >
-            Рассчитать
+            Рассчитать доставку
           </a>
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center border border-rule text-ink transition-colors hover:border-ink md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-line text-ink transition-colors hover:border-accent md:hidden"
             aria-expanded={isMenuOpen}
             aria-controls="mobile-nav"
             aria-label={isMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
             onClick={() => setMenuOpen((open) => !open)}
           >
-            <span aria-hidden="true" className="font-mono text-lg leading-none">
+            <span aria-hidden="true" className="text-lg leading-none">
               {isMenuOpen ? '✕' : '≡'}
             </span>
           </button>
@@ -74,7 +74,7 @@ export function Header() {
       {isMenuOpen && (
         <nav
           id="mobile-nav"
-          className="border-t border-rule bg-paper px-5 py-4 md:hidden"
+          className="border-t border-line bg-base px-5 py-4 md:hidden"
           aria-label="Мобильная навигация"
         >
           <ul className="flex flex-col gap-1">
@@ -82,7 +82,7 @@ export function Header() {
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="block px-2 py-3 font-mono text-sm uppercase tracking-[0.06em] text-ink-soft transition-colors hover:bg-paper-sunk hover:text-ink"
+                  className="block rounded-lg px-2 py-3 text-base text-ink-soft transition-colors hover:bg-surface hover:text-ink"
                   onClick={() => setMenuOpen(false)}
                 >
                   {link.label}
@@ -92,7 +92,7 @@ export function Header() {
             <li>
               <a
                 href="#lead"
-                className="mt-2 block bg-stamp px-2 py-3 text-center font-mono text-sm font-semibold uppercase tracking-[0.06em] text-paper"
+                className="mt-2 block rounded-full bg-accent px-2 py-3 text-center text-base font-semibold text-surface"
                 onClick={() => setMenuOpen(false)}
               >
                 Рассчитать доставку

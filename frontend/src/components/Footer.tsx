@@ -8,26 +8,29 @@ const REQUISITES = [
 
 const CONTACTS = [
   { label: 'Телефон', value: '+7 495 120-44-18', href: 'tel:+74951204418' },
-  { label: 'Почта', value: 'cargo@iracus.ru', href: 'mailto:cargo@iracus.ru' },
-  { label: 'Telegram', value: '@iracus_logistics_bot', href: 'https://t.me/iracus_logistics_bot' },
+  { label: 'Почта', value: 'cargo@icaris.ru', href: 'mailto:cargo@icaris.ru' },
+  { label: 'Telegram', value: '@icarislogisticsbot', href: 'https://t.me/icarislogisticsbot' },
 ]
+
+// Числовые реквизиты идут на терминал-чип; адрес/название — обычный текст.
+const TERMINAL_REQUISITES = new Set(['ИНН', 'ОГРН'])
 
 export function Footer() {
   return (
-    <footer id="contacts" className="border-t border-rule bg-paper">
+    <footer id="contacts" className="border-t border-line bg-base">
       <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8">
         <div className="grid gap-10 md:grid-cols-[1fr_1fr_auto]">
           <div>
-            {/* Бренд-марка как в шапке: квадрат-литера + Iracus */}
+            {/* Бренд-марка как в шапке: кобальтовый скруглённый квадрат-литера + Icaris */}
             <div className="flex items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="flex h-7 w-7 items-center justify-center border border-ink font-mono text-sm font-bold text-ink"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-surface"
               >
                 I
               </span>
-              <span className="font-display text-lg font-extrabold uppercase tracking-[-0.01em] text-ink">
-                Iracus
+              <span className="font-display text-lg font-extrabold tracking-[-0.01em] text-ink">
+                Icaris
               </span>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-soft">
@@ -36,28 +39,37 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Реквизиты как строки реестра: ruled-разделители, mono-данные */}
-          <dl className="border-t border-rule text-sm">
+          {/* Реквизиты — чистые строки реестра с тихими делителями; числа на терминал-чипе */}
+          <dl className="text-sm">
             {REQUISITES.map((item) => (
-              <div key={item.label} className="flex gap-3 border-b border-rule py-2.5">
-                <dt className="w-24 shrink-0 font-mono text-[0.7rem] uppercase tracking-[0.06em] text-ink-soft">
+              <div
+                key={item.label}
+                className="flex flex-col gap-1 border-b border-line-soft py-3 first:border-t xs:flex-row xs:items-center xs:gap-3"
+              >
+                <dt className="shrink-0 text-[0.7rem] uppercase tracking-[0.06em] text-ink-soft xs:w-24">
                   {item.label}
                 </dt>
-                <dd className="tabular font-mono text-ink">{item.value}</dd>
+                <dd>
+                  {TERMINAL_REQUISITES.has(item.label) ? (
+                    <span className="terminal text-sm">{item.value}</span>
+                  ) : (
+                    <span className="tabular font-mono text-ink">{item.value}</span>
+                  )}
+                </dd>
               </div>
             ))}
           </dl>
 
-          <div className="flex flex-col gap-4">
-            <ul className="space-y-2.5 text-sm">
+          <div className="flex flex-col gap-5">
+            <ul className="space-y-3 text-sm">
               {CONTACTS.map((contact) => (
                 <li key={contact.label} className="flex flex-col">
-                  <span className="font-mono text-[0.7rem] uppercase tracking-[0.06em] text-ink-soft">
+                  <span className="text-[0.7rem] uppercase tracking-[0.06em] text-ink-soft">
                     {contact.label}
                   </span>
                   <a
                     href={contact.href}
-                    className="inline-flex min-h-11 items-center font-mono text-ink underline-offset-4 transition-colors duration-200 hover:underline"
+                    className="inline-flex min-h-11 items-center font-mono text-ink underline-offset-4 transition-colors duration-200 hover:text-accent hover:underline"
                   >
                     {contact.value}
                   </a>
@@ -66,14 +78,14 @@ export function Footer() {
             </ul>
             <a
               href="#lead"
-              className="inline-flex items-center justify-center bg-stamp px-5 py-3 font-mono text-sm font-semibold uppercase tracking-[0.06em] text-paper transition-colors duration-200 hover:bg-stamp-deep"
+              className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep"
             >
               Рассчитать доставку
             </a>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-rule pt-6 font-mono text-xs uppercase tracking-[0.04em] text-ink-soft sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-2 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row sm:items-center sm:justify-between">
           <span>© {new Date().getFullYear()} ООО «Иракус Логистикс». Все права защищены.</span>
           <span>Грузы под контролем</span>
         </div>

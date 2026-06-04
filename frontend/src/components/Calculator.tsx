@@ -43,19 +43,19 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
       title="Калькулятор диапазона цены"
       intro="Введите параметры груза — увидите предварительную вилку и срок доставки. Это оценка по нашим базовым ставкам, а не оффер."
     >
-      <div className="grid border border-rule bg-paper lg:grid-cols-[1fr_1fr]">
+      <div className="grid gap-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8 lg:grid-cols-[1fr_1fr] lg:gap-8">
         {/* Панель-инпуты */}
-        <div className="border-b border-rule p-6 sm:p-8 lg:border-b-0 lg:border-r">
+        <div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <span className="field-label mb-2 block">Способ доставки</span>
-              {/* Сегменты-тоггл: активный — чернильная заливка, не цвет; разделители-линии */}
+              {/* Мягкий сегмент-контрол: активный — кобальтовая pill-заливка */}
               <div
                 role="group"
                 aria-label="Способ доставки"
-                className="grid grid-cols-3 border border-ink"
+                className="grid grid-cols-3 gap-1 rounded-full border border-line bg-surface-soft p-1"
               >
-                {MODES.map((value, index) => {
+                {MODES.map((value) => {
                   const isActive = mode === value
                   return (
                     <button
@@ -63,12 +63,10 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
                       type="button"
                       aria-pressed={isActive}
                       onClick={() => setMode(value)}
-                      className={`px-3 py-3 font-mono text-sm uppercase tracking-[0.06em] transition-colors duration-200 ${
-                        index > 0 ? 'border-l border-ink' : ''
-                      } ${
+                      className={`min-h-11 rounded-full px-3 py-2.5 font-mono text-sm uppercase tracking-[0.06em] transition-colors duration-200 ${
                         isActive
-                          ? 'bg-ink text-paper'
-                          : 'bg-paper-raised text-ink-soft hover:text-ink'
+                          ? 'bg-accent text-surface'
+                          : 'text-ink-soft hover:text-ink'
                       }`}
                     >
                       {MODE_LABELS[value]}
@@ -138,39 +136,32 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
             </div>
           </div>
 
-          <p className="mt-5 text-sm leading-relaxed text-ink-soft">
+          <p className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-relaxed text-ink-soft">
             Расчётный вес — больше из фактического и объёмного:{' '}
-            <span className="tabular font-mono text-ink">{result.chargeableKg} кг</span>.
+            <span className="terminal text-sm">{result.chargeableKg} кг</span>
           </p>
         </div>
 
-        {/* Вывод вилки — панель-выписка манифеста */}
-        <div className="flex flex-col justify-between p-6 sm:p-8">
+        {/* Блок результата — мягкая surface-карточка с терминал-показаниями */}
+        <div className="flex flex-col justify-between rounded-2xl bg-surface-soft p-6 shadow-soft sm:p-7">
           <div>
             <p className="eyebrow mb-4">Предварительная оценка</p>
-            <div
-              className="border border-rule bg-paper-raised"
-              aria-live="polite"
-            >
-              <p className="border-b border-rule px-5 py-3 font-mono text-[0.7rem] uppercase tracking-[0.1em] text-ink-soft">
-                Диапазон стоимости
-              </p>
-              {/* Цена — единственный штамп-акцент блока */}
-              <p className="tabular flex flex-wrap items-baseline gap-x-2 gap-y-1 px-5 py-5 font-mono text-2xl font-bold leading-tight tracking-[-0.02em] text-ink sm:text-3xl md:text-4xl">
+            <div aria-live="polite">
+              <p className="field-label">Диапазон стоимости</p>
+              {/* Цена — крупное терминал-табло, фосфор на тёмном чипе */}
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-2 leading-tight">
                 <span className="text-ink-soft">от</span>
-                <span className="whitespace-nowrap text-stamp">
+                <span className="terminal whitespace-nowrap text-2xl font-bold tracking-[-0.02em] sm:text-3xl md:text-4xl">
                   ${result.low.toLocaleString('ru-RU')}
                 </span>
                 <span className="text-ink-soft">до</span>
-                <span className="whitespace-nowrap text-stamp">
+                <span className="terminal whitespace-nowrap text-2xl font-bold tracking-[-0.02em] sm:text-3xl md:text-4xl">
                   ${result.high.toLocaleString('ru-RU')}
                 </span>
               </p>
-              <div className="flex items-center justify-between border-t border-rule px-5 py-4">
-                <span className="font-mono text-[0.7rem] uppercase tracking-[0.1em] text-ink-soft">
-                  Срок доставки
-                </span>
-                <span className="tabular font-mono text-base text-ink">
+              <div className="mt-6 flex items-center justify-between border-t border-line-soft pt-4">
+                <span className="field-label">Срок доставки</span>
+                <span className="terminal text-base">
                   {result.etaDays[0]}–{result.etaDays[1]} дней
                 </span>
               </div>
@@ -188,7 +179,7 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
             onClick={() =>
               onSendAsLead({ weight, volume, cargoType, toCity, mode })
             }
-            className="mt-6 inline-flex items-center justify-center bg-stamp px-6 py-3.5 font-mono text-sm font-semibold uppercase tracking-[0.08em] text-paper transition-colors duration-200 hover:bg-stamp-deep disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3.5 text-base font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-50"
           >
             Отправить как заявку
           </button>

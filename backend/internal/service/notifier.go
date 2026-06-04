@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"iracus-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/domain"
 )
 
 // Notifier — то, что сервису нужно от уведомлений о новых лидах. Интерфейс объявлен

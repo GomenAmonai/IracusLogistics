@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"iracus-logistic/backend/internal/bot"
-	"iracus-logistic/backend/internal/config"
-	"iracus-logistic/backend/internal/db"
-	apphttp "iracus-logistic/backend/internal/http"
-	"iracus-logistic/backend/internal/repository"
-	"iracus-logistic/backend/internal/service"
+	"icaris-logistic/backend/internal/bot"
+	"icaris-logistic/backend/internal/config"
+	"icaris-logistic/backend/internal/db"
+	apphttp "icaris-logistic/backend/internal/http"
+	"icaris-logistic/backend/internal/repository"
+	"icaris-logistic/backend/internal/service"
 )
 
 func main() {
@@ -39,6 +39,9 @@ func main() {
 
 	leadRepo := repository.NewLeadRepository(gdb)
 	managerRepo := repository.NewManagerRepository(gdb)
+	clientRepo := repository.NewClientRepository(gdb)
+	shipmentRepo := repository.NewShipmentRepository(gdb)
+	messageRepo := repository.NewMessageRepository(gdb)
 
 	notifier, err := bot.New(cfg.TelegramBotToken, cfg.ManagerChatID)
 	if err != nil {
@@ -48,12 +51,21 @@ func main() {
 
 	leadService := service.NewLeadService(leadRepo, notifier)
 	authService := service.NewAuthService(managerRepo, cfg.JWTSecret, cfg.JWTTTL)
+	clientService := service.NewClientService(clientRepo, cfg.TelegramBotToken, cfg.JWTSecret, cfg.JWTTTL)
+	shipmentService := service.NewShipmentService(shipmentRepo, clientRepo, notifier)
+	messageService := service.NewMessageService(messageRepo, shipmentRepo, clientRepo, notifier, notifier)
+
+	// Бот принимает команды клиентов (/start, /status) в long polling, пока жив ctx.
+	go notifier.Run(ctx, bot.RunDeps{Registrar: clientService, Lister: shipmentService})
 
 	router := apphttp.NewRouter(apphttp.RouterDeps{
-		DB:          gdb,
-		LeadService: leadService,
-		AuthService: authService,
-		JWTSecret:   cfg.JWTSecret,
+		DB:              gdb,
+		LeadService:     leadService,
+		AuthService:     authService,
+		ClientService:   clientService,
+		ShipmentService: shipmentService,
+		MessageService:  messageService,
+		JWTSecret:       cfg.JWTSecret,
 	})
 
 	server := &http.Server{

@@ -35,26 +35,22 @@ export function HowItWorks({ onStepHover }: HowItWorksProps) {
       title="Пять шагов от заявки до груза на вашем складе"
       intro="Схема прозрачна с первого касания: сайт даёт вилку цены, заявка не требует регистрации, точную сумму фиксирует менеджер после проверки документов."
     >
-      <ol className="border-t border-rule md:grid md:grid-cols-5 md:border-t-0 md:border-l md:border-rule">
+      <ol className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
         {STEPS.map((step, index) => (
           <li
             key={step.title}
-            // Реестр манифеста: строки на бумаге держатся линиями border-rule,
-            // на десктопе — пять колонок с вертикальными делителями. Без карточек.
-            className="group flex flex-col border-b border-rule bg-paper px-1 py-6 transition-colors duration-200 hover:bg-paper-raised focus-within:bg-paper-raised md:border-b-0 md:border-r md:px-5"
+            // Мягкая карточка-степпер: при hover/фокусе граница уходит в кобальт —
+            // активный шаг подсвечивает соответствующий узел коридора в Hero.
+            className="group flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card transition-colors duration-200 hover:border-accent focus-within:border-accent"
             onMouseEnter={() => onStepHover(index)}
             onMouseLeave={() => onStepHover(null)}
             onFocus={() => onStepHover(index)}
             onBlur={() => onStepHover(null)}
           >
-            <div className="mb-4 flex items-center gap-3 border-b border-rule-soft pb-3">
-              <span
-                aria-hidden="true"
-                className="tabular font-mono text-3xl font-extrabold leading-none tracking-[-0.02em] text-ink-soft transition-colors group-hover:text-stamp group-focus-within:text-stamp"
-              >
-                {String(index + 1).padStart(2, '0')}
-              </span>
-            </div>
+            {/* Номер шага — числовое табло терминала: контраст в мягком UI */}
+            <span className="terminal mb-4 self-start text-sm font-semibold">
+              {String(index + 1).padStart(2, '0')}
+            </span>
             <h3 className="font-display text-lg font-extrabold leading-tight tracking-[-0.02em] text-ink">
               {step.title}
             </h3>

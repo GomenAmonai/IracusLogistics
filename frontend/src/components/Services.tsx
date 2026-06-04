@@ -50,38 +50,38 @@ export function Services() {
       title="Полный цикл от поставщика до вашего склада"
       intro="Берём на себя то, на чём импортёр обычно теряет деньги и время: выкуп, сборку партии, таможню и доставку до двери."
     >
-      {/* Реестр услуг: нумерованные ruled-строки, как позиции манифеста */}
-      <div className="border-y border-rule">
+      {/* Услуги — мягкие скруглённые карточки: номер позиции как терминал-табло */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {SERVICES.map((service, index) => (
           <article
             key={service.title}
-            className="grid grid-cols-[auto_1fr] items-baseline gap-x-5 gap-y-1.5 border-b border-rule-soft py-5 last:border-b-0 sm:grid-cols-[auto_minmax(0,16rem)_1fr] sm:gap-x-8"
+            className="rounded-2xl border border-line bg-surface p-6 shadow-card transition-shadow duration-200 hover:shadow-soft"
           >
-            <span className="tabular font-mono text-sm text-ink-soft">
+            <span className="terminal text-sm font-semibold">
               {String(index + 1).padStart(2, '0')}
             </span>
-            <h3 className="font-display text-lg font-bold tracking-[-0.01em] text-ink">
+            <h3 className="mt-4 font-display text-lg font-bold tracking-[-0.01em] text-ink">
               {service.title}
             </h3>
-            <p className="col-start-2 text-sm leading-relaxed text-ink-soft sm:col-start-3">
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
               {service.text}
             </p>
           </article>
         ))}
       </div>
 
-      {/* Единственный штамп-акцент блока: ключевой принцип процесса */}
-      <p className="mt-5 flex items-baseline gap-4 border-l-2 border-stamp bg-paper-raised py-4 pl-5 pr-6 text-sm leading-relaxed text-ink">
-        <span className="field-label shrink-0 text-stamp">Принцип</span>
+      {/* Единственный кобальт-акцент блока: ключевой принцип процесса */}
+      <p className="mt-5 flex items-baseline gap-4 rounded-2xl border-l-2 border-accent bg-accent-tint py-4 pl-5 pr-6 text-sm leading-relaxed text-ink">
+        <span className="field-label shrink-0 text-accent">Принцип</span>
         Каждый этап закрыт документами — груз не «зависает» между подрядчиками.
       </p>
 
-      {/* Причины выбрать: bordered ruled-ячейки, острые углы */}
-      <div className="mt-16 grid border-l border-t border-rule sm:grid-cols-2">
+      {/* Причины выбрать — мягкие скруглённые surface-карточки */}
+      <div className="mt-16 grid gap-5 sm:grid-cols-2">
         {REASONS.map((reason) => (
           <article
             key={reason.title}
-            className="border-b border-r border-rule p-6"
+            className="rounded-2xl border border-line bg-surface p-6 shadow-card transition-shadow duration-200 hover:shadow-soft"
           >
             <h3 className="font-display text-base font-bold tracking-[-0.01em] text-ink">
               {reason.title}

@@ -1,4 +1,4 @@
-module iracus-logistic/backend
+module icaris-logistic/backend
 
 go 1.26
 

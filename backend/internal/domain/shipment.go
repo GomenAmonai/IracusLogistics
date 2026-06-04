@@ -40,3 +40,28 @@ const (
 	ShipmentStatusDelivered      ShipmentStatus = "delivered"
 	ShipmentStatusCancelled      ShipmentStatus = "cancelled"
 )
+
+// IsValid сообщает, входит ли статус в допустимый набор. Сервис проверяет это перед
+// записью, чтобы вернуть 400, а не словить 500 от CHECK-ограничения в БД.
+func (s ShipmentStatus) IsValid() bool {
+	switch s {
+	case ShipmentStatusPending, ShipmentStatusPickedUp, ShipmentStatusInTransit,
+		ShipmentStatusCustomsClear, ShipmentStatusInWarehouse, ShipmentStatusOutForDelivery,
+		ShipmentStatusDelivered, ShipmentStatusCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
+// ShipmentStatusEvent — запись в истории смены статуса груза. Создаётся при заведении
+// груза (начальный статус) и при каждой смене статуса; из этих записей клиент видит
+// таймлайн в WebApp. ChangedBy nullable — менеджера могли удалить.
+type ShipmentStatusEvent struct {
+	ID         uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ShipmentID uuid.UUID      `gorm:"type:uuid;not null;index" json:"shipment_id"`
+	Status     ShipmentStatus `gorm:"type:varchar(20);not null" json:"status"`
+	Comment    string         `gorm:"type:text" json:"comment"`
+	ChangedBy  *uuid.UUID     `gorm:"type:uuid" json:"changed_by"`
+	CreatedAt  time.Time      `gorm:"not null;default:now()" json:"created_at"`
+}

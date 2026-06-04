@@ -21,7 +21,7 @@ func Load() Config {
 	return Config{
 		AppEnv:      getEnv("APP_ENV", "development"),
 		HTTPAddr:    getEnv("HTTP_ADDR", ":8080"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://iracus:iracus@localhost:5433/iracus_logistic?sslmode=disable"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://icaris:icaris@localhost:5433/icaris_logistic?sslmode=disable"),
 
 		// NOTE: MVP — dev-дефолт секрета; в проде JWT_SECRET обязателен; см. docs/tech-debt.md
 		JWTSecret: getEnv("JWT_SECRET", "dev-insecure-secret-change-me"),

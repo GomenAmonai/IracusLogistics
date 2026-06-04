@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"iracus-logistic/backend/internal/config"
-	"iracus-logistic/backend/internal/db"
-	"iracus-logistic/backend/internal/domain"
-	"iracus-logistic/backend/internal/repository"
+	"icaris-logistic/backend/internal/config"
+	"icaris-logistic/backend/internal/db"
+	"icaris-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/repository"
 )
 
 func setupLeadRepo(t *testing.T) (*repository.LeadRepository, *gorm.DB) {

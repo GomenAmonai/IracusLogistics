@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"iracus-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/domain"
 )
 
 var ErrValidation = errors.New("validation failed")

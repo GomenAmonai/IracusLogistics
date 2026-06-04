@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 
-	"iracus-logistic/backend/internal/config"
-	"iracus-logistic/backend/internal/db"
-	"iracus-logistic/backend/internal/repository"
-	"iracus-logistic/backend/internal/service"
+	"icaris-logistic/backend/internal/config"
+	"icaris-logistic/backend/internal/db"
+	"icaris-logistic/backend/internal/repository"
+	"icaris-logistic/backend/internal/service"
 )
 
 // createmanager заводит менеджера из командной строки. Публичной регистрации нет

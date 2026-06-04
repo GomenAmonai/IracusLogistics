@@ -1,35 +1,40 @@
 @import 'tailwindcss';
 
-/* ── Дизайн-токены Iracus · «Фрахтовое досье» ──────────────────────────────
-   Тёплая бумага + чёрные чернила + один штамп-акцент (cinnabar). Эстетика
-   таможенной декларации/манифеста: разметка-линии, острые углы, плакатная
-   типографика, мотив штампа и коридора. Тёмной инверсии нет. Все значения —
-   только отсюда; в компонентах хардкода цвета нет. */
+/* ── Дизайн-токены Icaris · «Тихая гавань» ─────────────────────────────────
+   Спокойный прохладный светлый интерфейс: мягкие скруглённые поверхности,
+   воздух, один приземлённый акцент. Числа — моноширинные (класс .terminal),
+   цветом по умолчанию, без подложек. Светлая тема. Все значения — только
+   отсюда; в компонентах хардкода нет. Акцент задаётся одним токеном --accent. */
 @theme {
-  /* Поверхности — тёплая бумага */
-  --color-paper: #f1ece2; /* основной фон */
-  --color-paper-raised: #f9f5ed; /* карточки/панели — светлее бумаги */
-  --color-paper-sunk: #e7e0d2; /* утопленные зоны, подложки полей */
+  /* Поверхности — прохладный светлый нейтрал */
+  --color-base: #eef2f7; /* основной фон */
+  --color-base-tint: #e5ebf3; /* чередующиеся секции */
+  --color-surface: #ffffff; /* карточки/панели */
+  --color-surface-soft: #f7f9fc; /* подложки полей, мягкие зоны */
 
-  /* Чернила */
-  --color-ink: #17140f; /* основной текст и заголовки (~16:1) */
-  --color-ink-soft: #6a6256; /* вторичный текст, подписи (~5:1) */
+  /* Текст — приземлённый сине-графитовый, не чёрный */
+  --color-ink: #18222e; /* основной текст и заголовки (~14:1 на base) */
+  --color-ink-soft: #54616f; /* вторичный текст, подписи (~5:1) */
 
-  /* Акцент-штамп: ровно один тёплый — действия и ключевое (белый текст AA) */
-  --color-stamp: #bc3b22;
-  --color-stamp-deep: #a02c14;
-  --color-marine: #1f4a6e; /* холодный служебный — линия маршрута, data-viz */
+  /* Акцент — один основной цвет (действия, ссылки, маршрут). Меняется тут. */
+  --color-accent: #0e7490; /* грунтованный тил */
+  --color-accent-deep: #0c647d; /* hover/нажатие */
+  --color-accent-tint: #e2f0f4; /* мягкая заливка-фон */
 
   /* Разметка и состояния */
-  --color-rule: #d6ccbb; /* видимые границы, 1px разметка манифеста */
-  --color-rule-soft: #e3dccd; /* тихие внутренние делители */
-  --color-cargo: #256340; /* статус «в работе/доставлено», валидные поля (AA на бумаге) */
-  --color-alert: #b3402c; /* ошибки валидации формы */
+  --color-line: #d7dfea; /* границы, делители на светлом */
+  --color-line-soft: #e7edf4; /* тихие внутренние делители */
+  --color-cargo: #176a43; /* статус «в работе/доставлено», валидно (AA-текст) */
+  --color-alert: #c2412b; /* ошибки валидации формы */
 
-  /* Типографика */
+  /* Типографика — исходная связка */
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Мягкие тени-подъёмы «тихой гавани» */
+  --shadow-card: 0 1px 2px rgba(24, 34, 46, 0.04), 0 12px 30px -16px rgba(24, 34, 46, 0.18);
+  --shadow-soft: 0 1px 2px rgba(24, 34, 46, 0.05), 0 22px 50px -28px rgba(24, 34, 46, 0.28);
 
   --ease-corridor: cubic-bezier(0.22, 1, 0.36, 1);
   --breakpoint-xs: 30rem;
@@ -46,13 +51,13 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 4.5rem; /* учитываем sticky-шапку при якорной навигации */
+    scroll-padding-top: 5rem; /* учитываем sticky-шапку при якорной навигации */
   }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: var(--color-paper);
+    background-color: var(--color-base);
     color: var(--color-ink);
     font-family: var(--font-body);
     font-weight: 400;
@@ -63,7 +68,7 @@
   }
 
   ::selection {
-    background-color: color-mix(in srgb, var(--color-stamp) 22%, transparent);
+    background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
   }
 
   /* Цифры не «прыгают»: ровные табличные показания */
@@ -71,10 +76,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Видимый фокус — холодный служебный ring, никогда не убираем без замены */
+  /* Видимый фокус — акцентный ring, никогда не убираем без замены */
   :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-    outline: 2px solid var(--color-marine);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+    border-radius: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -93,37 +99,38 @@
 }
 
 @layer components {
-  /* Надзаголовок-метка секции — строка регистрации документа */
+  /* Надзаголовок-метка секции — спокойный акцентный лейбл */
   .eyebrow {
     font-family: var(--font-mono);
     font-size: 0.75rem;
     font-weight: 500;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-ink-soft);
+    color: var(--color-accent);
   }
 
   /* Микро-лейбл поля */
   .field-label {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
     font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: var(--color-ink-soft);
   }
 
-  /* Поле ввода: бумажная подложка, острые углы, холодный focus */
+  /* Поле ввода: белая подложка, мягкие углы, акцентный focus */
   .input-field {
     width: 100%;
-    background-color: var(--color-paper-raised);
-    border: 1px solid var(--color-rule);
-    border-radius: 0; /* острые углы — документ, не SaaS */
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 0.625rem;
     padding: 0.75rem 0.875rem;
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: 1rem;
-    transition: border-color 160ms var(--ease-corridor);
+    transition:
+      border-color 160ms var(--ease-corridor),
+      box-shadow 160ms var(--ease-corridor);
   }
 
   .input-field::placeholder {
@@ -131,26 +138,20 @@
   }
 
   .input-field:hover {
-    border-color: color-mix(in srgb, var(--color-rule) 40%, var(--color-ink-soft));
+    border-color: color-mix(in srgb, var(--color-line) 40%, var(--color-ink-soft));
   }
 
   .input-field:focus-visible {
-    border-color: var(--color-marine);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
   }
 
-  /* Штамп — повёрнутый двойной кант, как оттиск таможни */
-  .stamp {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 2px solid var(--color-stamp);
-    color: var(--color-stamp);
+  /* Терминал = моноширинные табличные числа (как на табло), цвет по умолчанию.
+     Без подложки/чипа — просто «приборный» шрифт для числовых показаний. */
+  .terminal {
     font-family: var(--font-mono);
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 0.5rem 0.875rem;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-stamp) 35%, transparent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
   /* Оркестрованный page-load reveal: набегание секций снизу */

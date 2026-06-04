@@ -11,7 +11,7 @@ type SectionProps = {
   surface?: boolean
 }
 
-// Секция лендинга с reveal-набеганием и опциональной бумажной подложкой.
+// Секция лендинга с reveal-набеганием и опциональной чередующейся подложкой.
 export function Section({ id, eyebrow, title, intro, children, surface }: SectionProps) {
   const { ref, isVisible } = useReveal<HTMLElement>()
 
@@ -20,8 +20,8 @@ export function Section({ id, eyebrow, title, intro, children, surface }: Sectio
       id={id}
       ref={ref}
       className={`reveal ${isVisible ? 'reveal-in' : ''} ${
-        surface ? 'bg-paper-raised' : ''
-      } border-t border-rule`}
+        surface ? 'bg-base-tint' : ''
+      } border-t border-line`}
     >
       <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 md:py-28">
         {(eyebrow || title || intro) && (

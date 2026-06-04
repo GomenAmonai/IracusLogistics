@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"iracus-logistic/backend/internal/domain"
-	"iracus-logistic/backend/internal/service"
+	"icaris-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/service"
 )
 
 const testSecret = "test-secret"
@@ -40,7 +40,7 @@ func storeWithManager(t *testing.T, password string) (*stubManagerStore, *domain
 	if err != nil {
 		t.Fatalf("hash password: %v", err)
 	}
-	manager := &domain.Manager{ID: uuid.New(), Email: "manager@iracus.io", Name: "Менеджер", Password: string(hash)}
+	manager := &domain.Manager{ID: uuid.New(), Email: "manager@icaris.io", Name: "Менеджер", Password: string(hash)}
 	return &stubManagerStore{manager: manager}, manager
 }
 
@@ -48,7 +48,7 @@ func TestAuthService_LoginUnknownEmailReturnsInvalidCredentials(t *testing.T) {
 	store := &stubManagerStore{getErr: domain.ErrNotFound}
 	svc := service.NewAuthService(store, testSecret, time.Hour)
 
-	_, err := svc.Login(context.Background(), "ghost@iracus.io", "whatever")
+	_, err := svc.Login(context.Background(), "ghost@icaris.io", "whatever")
 
 	if !errors.Is(err, service.ErrInvalidCredentials) {
 		t.Errorf("expected ErrInvalidCredentials, got %v", err)
@@ -90,7 +90,7 @@ func TestAuthService_CreateManagerStoresBcryptHash(t *testing.T) {
 	store := &stubManagerStore{}
 	svc := service.NewAuthService(store, testSecret, time.Hour)
 
-	if _, err := svc.CreateManager(context.Background(), "new@iracus.io", "Новый", "s3cret"); err != nil {
+	if _, err := svc.CreateManager(context.Background(), "new@icaris.io", "Новый", "s3cret"); err != nil {
 		t.Fatalf("create manager: %v", err)
 	}
 

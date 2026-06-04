@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"iracus-logistic/backend/internal/config"
-	"iracus-logistic/backend/internal/db"
-	"iracus-logistic/backend/internal/domain"
-	"iracus-logistic/backend/internal/repository"
+	"icaris-logistic/backend/internal/config"
+	"icaris-logistic/backend/internal/db"
+	"icaris-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/repository"
 )
 
 func setupManagerRepo(t *testing.T) (*repository.ManagerRepository, *gorm.DB) {
@@ -29,7 +29,7 @@ func createTestManager(t *testing.T, repo *repository.ManagerRepository, gdb *go
 	t.Helper()
 
 	manager := &domain.Manager{
-		Email:    "test-" + uuid.NewString() + "@iracus.io",
+		Email:    "test-" + uuid.NewString() + "@icaris.io",
 		Name:     "Тест",
 		Password: "not-a-real-hash",
 	}
@@ -70,7 +70,7 @@ func TestManagerRepository_GetByEmailReturnsCreated(t *testing.T) {
 func TestManagerRepository_GetByEmailUnknownReturnsNotFound(t *testing.T) {
 	repo, _ := setupManagerRepo(t)
 
-	_, err := repo.GetByEmail(context.Background(), "missing-"+uuid.NewString()+"@iracus.io")
+	_, err := repo.GetByEmail(context.Background(), "missing-"+uuid.NewString()+"@icaris.io")
 
 	if !errors.Is(err, domain.ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)

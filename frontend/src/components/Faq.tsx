@@ -35,18 +35,18 @@ export function Faq() {
       title="Отвечаем на то, что мешает решиться"
       intro="Конкретные B2B-вопросы про документы, пошлины, сроки и таможню — без общих слов."
     >
-      <div className="border-y border-rule">
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
         {ITEMS.map((item, index) => (
           <details
             key={item.q}
-            className={`group ${index > 0 ? 'border-t border-rule' : ''}`}
+            className={`group px-5 sm:px-7 ${index > 0 ? 'border-t border-line-soft' : ''}`}
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-base font-medium text-ink transition-colors hover:text-stamp">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-base font-medium text-ink transition-colors hover:text-accent">
               <span>{item.q}</span>
-              {/* Тоггл — служебная аффорданс, не data-viz: mono «+», ink-soft, на раскрытии чернеет до ink */}
+              {/* Тоггл — служебная аффорданс, не data-viz: mono «+», дозированный кобальт, на раскрытии поворачивается в «×» */}
               <span
                 aria-hidden="true"
-                className="shrink-0 font-mono text-xl leading-none text-ink-soft transition-transform duration-200 group-open:rotate-45 group-open:text-ink"
+                className="shrink-0 font-mono text-xl leading-none text-accent transition-transform duration-200 group-open:rotate-45 group-open:text-accent-deep"
               >
                 +
               </span>

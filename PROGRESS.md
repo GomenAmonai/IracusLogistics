@@ -87,3 +87,54 @@
 - Кардинальность `client.lead_id`: 1:1 (partial UNIQUE) или 1:N — решить к Фазе 3.
 - Прод-готовность: `JWT_SECRET` обязательным вне dev, CORS-белый список, `gin.ReleaseMode`, таймаут на отправку бота (tech-debt #5, #9, #12).
 - WebApp (Фаза 5) — отдельное приложение, общая дизайн-система с лендингом.
+
+### 2026-06-04 (вечер) — Фазы 3–6 одной делегированной сессией
+
+Hiki делегировал реализацию всех оставшихся фаз MVP целиком (build-then-teach). Разбор —
+`docs/learning-phase3-5.md`.
+
+**Сделано:**
+- **Фаза 3 (клиентский поток):** пакет `internal/telegram` (HMAC-проверка `initData`,
+  свежесть `auth_date`, fail-closed на пустой токен); `ClientRepository`;
+  `ClientService` (`Register` — идемпотентный get-or-create с восстановлением на
+  unique-конфликт; `AuthenticateWebApp`); генерация `tracking_key` (Crockford base32, 50 бит,
+  без modulo-bias); бот `/start` (регистрация + привязка `lead_id`) и `/status`.
+- **Фаза 4 (грузы):** `ShipmentRepository` (Create и UpdateStatus транзакционно пишут запись
+  истории; `delivered_at` ставится/снимается со статусом); `ShipmentService`; менеджерские
+  ручки CRUD + смена статуса; миграция `000008 shipment_status_events` + `domain.ShipmentStatusEvent`;
+  уведомление клиента в Telegram при смене статуса.
+- **Чат:** `MessageRepository`/`MessageService`; клиент пишет из WebApp, менеджер отвечает
+  ручкой; уведомления в обе стороны.
+- **Фаза 5 (WebApp):** Telegram Mini App — `webapp.html` + `src/webapp/` (вторая точка входа
+  Vite, общий `index.css`); авторизация по `initData`, список грузов, детали + таймлайн
+  истории, чат. Светлая тема «Тихая гавань» (как актуальный лендинг).
+- **Безопасность ролей:** пакет `internal/token` (claims с `Role`); `RequireAuth`
+  (role=manager) и `RequireClientAuth` (role=client) — закрыта эскалация (клиентский токен
+  больше не проходит менеджерскую проверку).
+- **Миграция `000007`:** partial unique `clients.lead_id` (кардинальность 1:1).
+- **Тесты:** `telegram` (round-trip подписи), `token`/middleware (разделение ролей),
+  `ClientService`/`ShipmentService` (фейки), `ShipmentRepository` (интеграционные,
+  само-пропуск без БД), регрессия на nil-`From` в боте. `go build/vet/test` и
+  `npm run build` зелёные. Потоки менеджера и клиента проверены end-to-end (curl + Playwright).
+- **Адверсариальное ревью (workflow, 25 агентов, 5 измерений):** 8 подтверждённых из 10.
+  Исправлено: nil-`From` в боте (паника валила процесс — guard + recover); `delivered_at`
+  не снимался при откате из delivered; нестабильный порядок таймлайна (вторичный ключ `id`);
+  потеря копеек в `formatMoney` (форматируем строку, не через `Number`); `bot.New` глотал
+  категорию ошибки; чат без `aria-live`. Два «находки» отклонены как недостижимые.
+
+**Принятые решения (на ратификацию, см. learning-phase3-5 §5):**
+- `client.lead_id` 1:1 (partial unique) — легко ослабить до 1:N позже.
+- WebApp использует светлую бренд-тему, а не тему Telegram.
+- Менеджерский reply — только ручкой (менеджерского UI в MVP нет).
+
+**Текущий статус:** все фазы MVP (1–6) готовы, схема **v8**. Новый техдолг — `docs/tech-debt.md`
+#15–19.
+
+**Следующий шаг:** утренний разбор по `docs/learning-phase3-5.md` (чеклист §7), ратификация
+решений §5; затем прод-готовность (webhook, outbox, CORS-whitelist, обязательный JWT_SECRET,
+ReleaseMode).
+
+**Открытые вопросы:**
+- Тёмная vs светлая тема (память `frontend-design-system` обновлена под актуальную светлую).
+- Реальный `TELEGRAM_BOT_TOKEN` для живой проверки бота и WebApp внутри Telegram (локально бот
+  в no-op, WebApp гонялся через dev `?token`).

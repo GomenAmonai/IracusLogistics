@@ -19,3 +19,6 @@ frontend/dist/
 # Editor
 .vscode/
 .idea/
+
+# Agent/test artifacts
+.playwright-mcp/

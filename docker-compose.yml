@@ -1,17 +1,17 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: iracus-logistic-postgres
+    container_name: icaris-logistic-postgres
     environment:
-      POSTGRES_DB: iracus_logistic
-      POSTGRES_USER: iracus
-      POSTGRES_PASSWORD: iracus
+      POSTGRES_DB: icaris_logistic
+      POSTGRES_USER: icaris
+      POSTGRES_PASSWORD: icaris
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U iracus -d iracus_logistic"]
+      test: ["CMD-SHELL", "pg_isready -U icaris -d icaris_logistic"]
       interval: 5s
       timeout: 5s
       retries: 10
