@@ -22,3 +22,6 @@ frontend/dist/
 
 # Agent/test artifacts
 .playwright-mcp/
+
+# Higgsfield raw renders (source; optimized copies live in frontend/public)
+assets/hero/

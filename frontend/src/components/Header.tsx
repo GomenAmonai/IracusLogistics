@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const NAV_LINKS = [
   { href: '#how', label: 'Как работаем' },
@@ -12,21 +12,46 @@ const PHONE = '+7 495 120-44-18'
 
 export function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false)
+  // Поверх тёмного hero шапка прозрачная со светлым текстом; на скролле — светлый солид.
+  const [isScrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const solid = isScrolled || isMenuOpen
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-base/85 backdrop-blur-md">
+    <header
+      className={`fixed top-0 z-50 w-full border-b transition-colors duration-300 ${
+        solid ? 'border-line bg-base/85 backdrop-blur-md' : 'border-transparent bg-transparent'
+      }`}
+    >
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
         <a href="#top" className="flex items-center gap-2.5" aria-label="IcarisLogistics, на главную">
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-surface"
+            className={`flex h-8 w-8 items-center justify-center rounded-lg font-display text-sm font-bold transition-colors ${
+              solid ? 'bg-accent text-surface' : 'bg-amber text-night'
+            }`}
           >
             I
           </span>
-          <span className="font-display text-lg font-extrabold tracking-[-0.01em] text-ink">
+          <span
+            className={`font-display text-lg font-extrabold tracking-[-0.01em] transition-colors ${
+              solid ? 'text-ink' : 'text-white'
+            }`}
+          >
             Icaris
           </span>
-          <span className="hidden font-mono text-xs tracking-wide text-ink-soft xs:inline">
+          <span
+            className={`hidden font-mono text-xs tracking-wide transition-colors xs:inline ${
+              solid ? 'text-ink-soft' : 'text-white/60'
+            }`}
+          >
             CN&nbsp;→&nbsp;RU
           </span>
         </a>
@@ -36,7 +61,9 @@ export function Header() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm text-ink-soft transition-colors duration-200 hover:text-ink"
+              className={`text-sm transition-colors duration-200 ${
+                solid ? 'text-ink-soft hover:text-ink' : 'text-white/75 hover:text-white'
+              }`}
             >
               {link.label}
             </a>
@@ -46,19 +73,29 @@ export function Header() {
         <div className="flex items-center gap-3">
           <a
             href={`tel:${PHONE.replace(/[^+\d]/g, '')}`}
-            className="hidden font-mono text-sm text-ink-soft transition-colors hover:text-ink lg:block"
+            className={`hidden font-mono text-sm transition-colors lg:block ${
+              solid ? 'text-ink-soft hover:text-ink' : 'text-white/75 hover:text-white'
+            }`}
           >
             {PHONE}
           </a>
           <a
             href="#lead"
-            className="hidden rounded-full bg-accent px-5 py-2 text-sm font-semibold text-surface transition-colors duration-200 hover:bg-accent-deep sm:inline-block"
+            className={`hidden rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200 sm:inline-block ${
+              solid
+                ? 'bg-accent text-surface hover:bg-accent-deep'
+                : 'bg-amber text-night hover:bg-white'
+            }`}
           >
             Рассчитать доставку
           </a>
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-lg border border-line text-ink transition-colors hover:border-accent md:hidden"
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border transition-colors md:hidden ${
+              solid
+                ? 'border-line text-ink hover:border-accent'
+                : 'border-white/25 text-white hover:border-white/50'
+            }`}
             aria-expanded={isMenuOpen}
             aria-controls="mobile-nav"
             aria-label={isMenuOpen ? 'Закрыть меню' : 'Открыть меню'}

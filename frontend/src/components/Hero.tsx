@@ -1,140 +1,108 @@
-// Узлы коридора CN→RU. Тот же набор подсвечивается из таймлайна «как работаем»:
-// при hover на шаге i загорается узел i — невидимый процесс становится видимым.
-const NODES = [
-  { x: 60, label: 'Гуанчжоу' },
-  { x: 175, label: 'Консолидация' },
-  { x: 290, label: 'Граница' },
-  { x: 405, label: 'Транзит' },
-  { x: 520, label: 'Москва' },
-]
-
 const METRICS = [
   { value: '18–28', unit: 'дней транзит авто' },
   { value: '100%', unit: 'грузов с трекингом' },
   { value: '2 ч', unit: 'среднее время ответа' },
 ]
 
+// Три равноправных способа везти — клиент выбирает по своей ситуации.
+const LANES = [
+  {
+    title: 'Карго',
+    note: 'Быстрая доставка через Казахстан и Азербайджан — для физлиц и небольших партий.',
+  },
+  {
+    title: 'Белый импорт',
+    note: 'С документами, НДС и Честным знаком — для маркетплейсов и юрлиц.',
+  },
+  {
+    title: 'Выкуп',
+    note: '找货, оплата поставщику и проверка товара на складе в Гуанчжоу.',
+  },
+]
+
 type HeroProps = {
-  activeNode: number | null
+  // Сохранено для совместимости с App (подсветка коридора из таймлайна); в тёмном hero не используется.
+  activeNode?: number | null
 }
 
-export function Hero({ activeNode }: HeroProps) {
+export function Hero(_props: HeroProps) {
   return (
-    <section id="top" className="relative overflow-hidden">
-      {/* Мягкая прохладная аура — спокойный свет, без резких пятен */}
+    <section id="top" className="relative isolate overflow-hidden bg-night text-white">
+      {/* Фоновый кадр коридора. Декоративный — смысл несёт заголовок. */}
+      <img
+        src="/hero/corridor-1920.jpg"
+        alt=""
+        aria-hidden="true"
+        fetchPriority="high"
+        width={1920}
+        height={1080}
+        className="absolute inset-0 -z-10 h-full w-full object-cover object-[70%_center]"
+      />
+      {/* Затемнение слева-направо под текст + увод низа в почти-чёрный к светлому блоку */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_60%_at_85%_-10%,var(--color-accent-tint),transparent_60%)]"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,#0b0e13_8%,rgba(11,14,19,0.82)_38%,rgba(11,14,19,0.35)_70%,rgba(11,14,19,0.55)_100%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-[linear-gradient(to_top,#0b0e13,transparent)]"
       />
 
-      <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 pb-20 pt-16 sm:px-8 md:grid-cols-[1.08fr_0.92fr] md:gap-12 md:pb-28 md:pt-24">
-        <div className="flex flex-col justify-center">
-          <p className="eyebrow mb-5 flex items-center gap-2.5">
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-accent" />
+      <div className="relative mx-auto w-full max-w-6xl px-5 pb-12 pt-28 sm:px-8 md:pb-16 md:pt-36">
+        <div className="max-w-2xl">
+          <p className="eyebrow mb-5 flex items-center gap-2.5 text-amber">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-amber" />
             Экспедирование Китай → Россия
           </p>
-          <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.025em] text-ink sm:text-5xl md:text-[3.5rem]">
-            Грузы из Китая в Россию —{' '}
-            <span className="text-accent">под контролем на каждом этапе</span>
+          <h1 className="font-display text-[2.6rem] font-extrabold leading-[1.04] tracking-[-0.03em] sm:text-6xl md:text-[4rem]">
+            Грузы из Китая <span className="text-amber">под контролем</span> на каждом этапе
           </h1>
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-soft sm:text-lg">
-            Выкуп, консолидация, таможенное оформление и доставка до двери.
-            Ответственность за груз закреплена договором, вы видите статус
-            контейнера на каждом этапе — от выкупа до выдачи с закрывающими
-            документами.
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+            Выкуп, консолидация, таможня и доставка до двери. Карго или белый
+            импорт — на выбор. За операциями в Китае стоит действующая
+            логистическая компания в Гуанчжоу, статус груза виден на каждом шаге.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 xs:flex-row xs:items-center">
+          <div className="mt-9 flex flex-col gap-3 xs:flex-row xs:items-center">
             <a
               href="#calc"
-              className="inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-base font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep"
+              className="inline-flex items-center justify-center rounded-full bg-amber px-7 py-3.5 text-base font-semibold text-night shadow-soft transition-transform duration-200 hover:-translate-y-0.5"
             >
               Рассчитать стоимость
             </a>
             <a
               href="#how"
-              className="inline-flex items-center justify-center rounded-full border border-line bg-surface px-7 py-3.5 text-base font-medium text-ink transition-colors duration-200 hover:border-accent hover:text-accent"
+              className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-7 py-3.5 text-base font-medium text-white backdrop-blur-sm transition-colors duration-200 hover:border-white/50 hover:bg-white/10"
             >
               Как это работает
             </a>
           </div>
 
-          {/* Показатели «терминалом» — моноширинные табличные числа, как на табло */}
-          <dl className="mt-12 flex flex-wrap gap-x-8 gap-y-6">
+          <dl className="mt-12 flex flex-wrap gap-x-9 gap-y-6">
             {METRICS.map((metric) => (
               <div key={metric.unit}>
                 <dt className="sr-only">{metric.unit}</dt>
                 <dd>
-                  <span className="terminal text-xl font-semibold sm:text-2xl">
-                    {metric.value}
-                  </span>
-                  <span className="mt-2 block text-xs leading-snug text-ink-soft">
-                    {metric.unit}
-                  </span>
+                  <span className="terminal text-2xl font-semibold sm:text-3xl">{metric.value}</span>
+                  <span className="mt-1.5 block text-xs leading-snug text-white/60">{metric.unit}</span>
                 </dd>
               </div>
             ))}
           </dl>
         </div>
 
-        {/* Коридор как мягкая карточка-виджет: тихий маршрут с узлами */}
-        <div className="flex flex-col justify-center">
-          <figure className="rounded-2xl border border-line bg-surface p-6 shadow-soft sm:p-7">
-            <figcaption className="mb-6 flex items-center justify-between">
-              <span className="eyebrow">Коридор доставки</span>
-              <span className="terminal text-xs">CN → RU</span>
-            </figcaption>
-
-            <svg
-              viewBox="0 0 580 96"
-              className="h-auto w-full"
-              role="img"
-              aria-label="Коридор доставки от Гуанчжоу до Москвы через консолидацию, границу и транзит"
+        {/* Три способа доставки — стеклянные карточки, мост в светлый функциональный низ */}
+        <ul className="mt-14 grid gap-3 sm:mt-20 sm:grid-cols-3 sm:gap-4">
+          {LANES.map((lane) => (
+            <li
+              key={lane.title}
+              className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md"
             >
-              <line
-                x1={NODES[0].x}
-                y1={40}
-                x2={NODES[NODES.length - 1].x}
-                y2={40}
-                stroke="var(--color-line)"
-                strokeWidth={2}
-              />
-              {NODES.map((node, index) => {
-                const isActive = activeNode === index
-                return (
-                  <g key={node.label}>
-                    <circle
-                      cx={node.x}
-                      cy={40}
-                      r={isActive ? 8 : 5}
-                      fill={isActive ? 'var(--color-accent)' : 'var(--color-surface)'}
-                      stroke="var(--color-accent)"
-                      strokeWidth={2}
-                      style={{
-                        transition: 'r 220ms var(--ease-corridor), fill 220ms var(--ease-corridor)',
-                      }}
-                    />
-                    <text
-                      x={node.x}
-                      y={70}
-                      textAnchor="middle"
-                      className="font-mono"
-                      fontSize={10.5}
-                      fill={isActive ? 'var(--color-ink)' : 'var(--color-ink-soft)'}
-                    >
-                      {node.label}
-                    </text>
-                  </g>
-                )
-              })}
-            </svg>
-
-            <p className="mt-6 border-t border-line-soft pt-5 text-sm leading-relaxed text-ink-soft">
-              Каждый груз получает отдельный трек-номер. Статус виден на каждом
-              узле коридора — от выкупа в КНР до выдачи на складе в России.
-            </p>
-          </figure>
-        </div>
+              <h2 className="font-display text-lg font-bold text-white">{lane.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-white/65">{lane.note}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )
