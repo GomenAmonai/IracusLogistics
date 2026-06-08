@@ -138,3 +138,26 @@ ReleaseMode).
 - Тёмная vs светлая тема (память `frontend-design-system` обновлена под актуальную светлую).
 - Реальный `TELEGRAM_BOT_TOKEN` для живой проверки бота и WebApp внутри Telegram (локально бот
   в no-op, WebApp гонялся через dev `?token`).
+
+---
+
+### 2026-06-08 — Дизайн: закрыта ветка `redesign/dark-hero`
+
+**Сделано:**
+- Ратифицирована тема: **тёмный кинематографичный hero → светлый функциональный низ** (Hiki
+  выбрал из вариантов dark-hero / полностью светлая / полностью тёмная).
+- Финиш hero (pass 2, `eaaed3d`): добавлена само-достаточная корридор-полоса (Гуанчжоу→Москва)
+  с поочерёдной пульсацией узлов (CSS, reduced-motion-safe). Удалён мёртвый кросс-секционный
+  sync таймлайн→hero: hero и «как работаем» разнесены на ~1000px по вертикали, подсветка
+  `activeNode` была не видна никогда → убран `activeNode` из App/Hero и хендлеры hover/focus
+  из HowItWorks.
+- `npm run build` зелёный (tsc + vite). `redesign/dark-hero` смержена в `main` (fast-forward,
+  `eaaed3d`); **локально, не запушено**.
+- Память `frontend-design-system` исправлена под факт: акцент — бронза `#a4661c` (была ошибочно
+  записана как тил), hero — тёмный `--color-night`/`--color-amber`.
+
+**Закрытый вопрос:** тёмная vs светлая — решено (dark hero + light body).
+
+**Следующий шаг:** прод-готовность (webhook, outbox, CORS-whitelist, обязательный `JWT_SECRET`,
+`gin.ReleaseMode`) — частью как backend-задачи для Hiki; либо ратификация решений §5 из
+`learning-phase3-5.md`.
