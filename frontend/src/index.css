@@ -174,10 +174,36 @@
       transform 600ms var(--ease-corridor);
   }
 
+  /* Узлы коридора в hero загораются по очереди слева направо — «груз виден на
+     каждом этапе». Момент подсветки сдвигается по индексу узла (--i). */
+  .corridor-node {
+    background-color: color-mix(in srgb, var(--color-amber) 30%, transparent);
+    animation: corridor-pulse 3.2s var(--ease-corridor) infinite;
+    animation-delay: calc(var(--i) * 0.5s);
+  }
+
+  @keyframes corridor-pulse {
+    0%,
+    62%,
+    100% {
+      background-color: color-mix(in srgb, var(--color-amber) 30%, transparent);
+      box-shadow: 0 0 0 0 transparent;
+    }
+    14% {
+      background-color: var(--color-amber);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-amber) 16%, transparent);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .reveal {
       opacity: 1;
       transform: none;
+    }
+
+    .corridor-node {
+      animation: none;
+      background-color: color-mix(in srgb, var(--color-amber) 55%, transparent);
     }
   }
 }

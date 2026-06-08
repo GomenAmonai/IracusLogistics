@@ -23,11 +23,7 @@ const STEPS = [
   },
 ]
 
-type HowItWorksProps = {
-  onStepHover: (index: number | null) => void
-}
-
-export function HowItWorks({ onStepHover }: HowItWorksProps) {
+export function HowItWorks() {
   return (
     <Section
       id="how"
@@ -39,13 +35,8 @@ export function HowItWorks({ onStepHover }: HowItWorksProps) {
         {STEPS.map((step, index) => (
           <li
             key={step.title}
-            // Мягкая карточка-степпер: при hover/фокусе граница уходит в кобальт —
-            // активный шаг подсвечивает соответствующий узел коридора в Hero.
+            // Мягкая карточка-степпер: при hover/фокусе граница уходит в акцент.
             className="group flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card transition-colors duration-200 hover:border-accent focus-within:border-accent"
-            onMouseEnter={() => onStepHover(index)}
-            onMouseLeave={() => onStepHover(null)}
-            onFocus={() => onStepHover(index)}
-            onBlur={() => onStepHover(null)}
           >
             {/* Номер шага — числовое табло терминала: контраст в мягком UI */}
             <span className="terminal mb-4 self-start text-sm font-semibold">

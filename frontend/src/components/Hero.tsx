@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+
 const METRICS = [
   { value: '18–28', unit: 'дней транзит авто' },
   { value: '100%', unit: 'грузов с трекингом' },
@@ -20,12 +22,11 @@ const LANES = [
   },
 ]
 
-type HeroProps = {
-  // Сохранено для совместимости с App (подсветка коридора из таймлайна); в тёмном hero не используется.
-  activeNode?: number | null
-}
+// Узлы коридора CN→RU — маршрут груза «виден на каждом этапе». Подсветка идёт по
+// очереди сама (CSS, см. .corridor-node), без зависимости от других секций.
+const ROUTE = ['Гуанчжоу', 'Консолидация', 'Граница', 'Транзит', 'Москва']
 
-export function Hero(_props: HeroProps) {
+export function Hero() {
   return (
     <section id="top" className="relative isolate overflow-hidden bg-night text-white">
       {/* Фоновый кадр коридора. Декоративный — смысл несёт заголовок. */}
@@ -91,8 +92,26 @@ export function Hero(_props: HeroProps) {
           </dl>
         </div>
 
+        {/* Коридор доставки: узлы загораются по очереди — «трекинг на каждом этапе».
+            Десктоп-акцент; на узких экранах прячем, чтобы не дробить 5 подписей. */}
+        <div className="mt-12 hidden max-w-2xl sm:block" aria-hidden="true">
+          <div className="relative flex items-start justify-between">
+            <span className="absolute inset-x-[5px] top-[5px] -z-0 h-px bg-white/15" />
+            {ROUTE.map((label, index) => (
+              <span
+                key={label}
+                className="relative flex flex-col items-center gap-2"
+                style={{ '--i': index } as CSSProperties}
+              >
+                <span className="corridor-node h-2.5 w-2.5 rounded-full" />
+                <span className="font-mono text-[0.7rem] tracking-wide text-white/55">{label}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
         {/* Три способа доставки — стеклянные карточки, мост в светлый функциональный низ */}
-        <ul className="mt-14 grid gap-3 sm:mt-20 sm:grid-cols-3 sm:gap-4">
+        <ul className="mt-12 grid gap-3 sm:grid-cols-3 sm:gap-4">
           {LANES.map((lane) => (
             <li
               key={lane.title}

@@ -12,8 +12,6 @@ import { Routes } from './components/Routes'
 import { Services } from './components/Services'
 
 function App() {
-  // Hover на шаге таймлайна подсвечивает соответствующий узел коридора в hero.
-  const [activeNode, setActiveNode] = useState<number | null>(null)
   const [prefill, setPrefill] = useState<LeadPrefill | null>(null)
 
   function handleSendAsLead(input: CalcPrefill) {
@@ -36,9 +34,9 @@ function App() {
       </a>
       <Header />
       <main>
-        <Hero activeNode={activeNode} />
+        <Hero />
         <Kpi />
-        <HowItWorks onStepHover={setActiveNode} />
+        <HowItWorks />
         <Calculator onSendAsLead={handleSendAsLead} />
         <Services />
         <Routes />
