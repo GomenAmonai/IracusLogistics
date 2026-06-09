@@ -21,10 +21,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg := config.Load()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
+
+	cfg := config.Load()
+	if err := cfg.Validate(); err != nil {
+		logger.Error("invalid configuration", "error", err)
+		os.Exit(1)
+	}
 
 	gdb, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -49,15 +54,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	leadService := service.NewLeadService(leadRepo, notifier)
+	// bg учитывает фоновые задачи (уведомления, цикл бота), чтобы дренировать их при остановке.
+	bg := service.NewBackground()
+
+	leadService := service.NewLeadService(leadRepo, notifier, bg)
 	authService := service.NewAuthService(managerRepo, cfg.JWTSecret, cfg.JWTTTL)
 	clientService := service.NewClientService(clientRepo, cfg.TelegramBotToken, cfg.JWTSecret, cfg.JWTTTL)
-	shipmentService := service.NewShipmentService(shipmentRepo, clientRepo, notifier)
-	messageService := service.NewMessageService(messageRepo, shipmentRepo, clientRepo, notifier, notifier)
+	shipmentService := service.NewShipmentService(shipmentRepo, clientRepo, notifier, bg)
+	messageService := service.NewMessageService(messageRepo, shipmentRepo, clientRepo, notifier, notifier, bg)
 
-	// Бот принимает команды клиентов (/start, /status) в long polling, пока жив ctx.
-	go notifier.Run(ctx, bot.RunDeps{Registrar: clientService, Lister: shipmentService})
+	// Бот принимает команды клиентов (/start, /status) в long polling, пока жив ctx. Через bg,
+	// чтобы при остановке дождаться завершения текущей команды (Run выходит по ctx.Done).
+	bg.Go(func() {
+		notifier.Run(ctx, bot.RunDeps{Registrar: clientService, Lister: shipmentService})
+	})
 
+	isDev := cfg.AppEnv == "development"
 	router := apphttp.NewRouter(apphttp.RouterDeps{
 		DB:              gdb,
 		LeadService:     leadService,
@@ -66,12 +78,19 @@ func main() {
 		ShipmentService: shipmentService,
 		MessageService:  messageService,
 		JWTSecret:       cfg.JWTSecret,
+		AllowedOrigins:  cfg.AllowedOrigins,
+		// В dev без явного списка отдаём «*» для удобства; вне dev — строго белый список.
+		AllowAnyOrigin: isDev && len(cfg.AllowedOrigins) == 0,
+		ReleaseMode:    !isDev,
 	})
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {
@@ -87,9 +106,14 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Сначала останавливаем HTTP-сервер (дожидается in-flight запросов — они и порождают
+	// последние фоновые задачи), затем дренируем фон. Порядок важен: новые задачи в bg больше
+	// не поступают, поэтому Wait не словит race по WaitGroup.
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error("server shutdown", "error", err)
-		os.Exit(1)
+	}
+	if err := bg.Wait(shutdownCtx); err != nil {
+		logger.Warn("background work not drained before timeout", "error", err)
 	}
 
 	logger.Info("api stopped")

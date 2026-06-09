@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"icaris-logistic/backend/internal/domain"
 )
@@ -46,19 +47,25 @@ func (r *LeadRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Lea
 	return &lead, nil
 }
 
-// UpdateStatus меняет статус лида. GORM на Update без совпадений ошибку не даёт, поэтому
-// RowsAffected == 0 трактуем как «лида с таким id нет» → domain.ErrNotFound.
-func (r *LeadRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) error {
+// UpdateStatus меняет статус лида и возвращает обновлённую запись. UPDATE ... RETURNING *
+// (clause.Returning) делает апдейт и чтение результата одним атомарным statement'ом — без
+// гонки read-after-write, которая возможна при двух отдельных запросах. Транзакция здесь не
+// нужна: правим одну строку, в отличие от ShipmentRepository.UpdateStatus, где пишутся две
+// таблицы. GORM на Update без совпадений ошибку не даёт, поэтому RowsAffected == 0 трактуем
+// как «лида с таким id нет» → domain.ErrNotFound.
+func (r *LeadRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) (*domain.Lead, error) {
+	var lead domain.Lead
 	result := r.db.WithContext(ctx).
-		Model(&domain.Lead{}).
+		Model(&lead).
+		Clauses(clause.Returning{}).
 		Where("id = ?", id).
 		Update("status", status)
 	if result.Error != nil {
-		return result.Error
+		return nil, result.Error
 	}
 	if result.RowsAffected == 0 {
-		return domain.ErrNotFound
+		return nil, domain.ErrNotFound
 	}
 
-	return nil
+	return &lead, nil
 }

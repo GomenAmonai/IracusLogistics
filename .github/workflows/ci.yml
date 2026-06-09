@@ -16,6 +16,26 @@ jobs:
       run:
         working-directory: backend
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: icaris_logistic
+          POSTGRES_USER: icaris
+          POSTGRES_PASSWORD: icaris
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U icaris -d icaris_logistic"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Прогоняем миграции и интеграционные тесты репозиториев против сервис-контейнера
+      # (иначе они само-пропускаются и SQL/транзакции в CI не проверяются).
+      DATABASE_URL: postgres://icaris:icaris@localhost:5432/icaris_logistic?sslmode=disable
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,6 +46,15 @@ jobs:
           go-version: '1.26.0'
           cache: true
           cache-dependency-path: backend/go.sum
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Migrate up
+        run: go run ./cmd/migrate up
 
       - name: Test
         run: go test ./...

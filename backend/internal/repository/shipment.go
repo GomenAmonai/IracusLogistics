@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"icaris-logistic/backend/internal/domain"
 )
@@ -86,7 +87,11 @@ func (r *ShipmentRepository) UpdateStatus(
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var current domain.Shipment
-		if err := tx.First(&current, "id = ?", id).Error; err != nil {
+		// FOR UPDATE: блокируем строку груза на время транзакции. Ниже читаем current.DeliveredAt
+		// и пишем его обратно (read-modify-write) — без блокировки два параллельных перехода
+		// статуса могли бы оба увидеть delivered_at == nil и разойтись в результате.
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&current, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrNotFound
 			}

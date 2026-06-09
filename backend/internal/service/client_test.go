@@ -15,9 +15,11 @@ import (
 type fakeClientStore struct {
 	byTelegram  map[int64]*domain.Client
 	createCalls int
-	// failIfLeadIDSet имитирует нарушение partial-unique uq_clients_lead_id: вставка с уже
-	// занятым lead_id падает (как в БД), вставка без lead_id проходит.
-	failIfLeadIDSet bool
+	// leadCollisionErr — если задано, Create с непустым lead_id возвращает эту ошибку, а вставка
+	// без lead_id проходит. Имитирует partial-unique uq_clients_lead_id: либо легитимную гонку
+	// (domain.ErrLeadAlreadyClaimed), либо произвольный не-duplicate сбой — чтобы проверить, что
+	// последний не маскируется под гонку.
+	leadCollisionErr error
 }
 
 func (f *fakeClientStore) GetByTelegramID(ctx context.Context, telegramID int64) (*domain.Client, error) {
@@ -29,8 +31,8 @@ func (f *fakeClientStore) GetByTelegramID(ctx context.Context, telegramID int64)
 
 func (f *fakeClientStore) Create(ctx context.Context, client *domain.Client) error {
 	f.createCalls++
-	if f.failIfLeadIDSet && client.LeadID != nil {
-		return errors.New("duplicate key value violates unique constraint uq_clients_lead_id")
+	if f.leadCollisionErr != nil && client.LeadID != nil {
+		return f.leadCollisionErr
 	}
 	client.ID = uuid.New() // имитируем генерацию id базой
 	if f.byTelegram == nil {
@@ -72,7 +74,7 @@ func TestClientService_RegisterIsIdempotentForSameTelegramID(t *testing.T) {
 func TestClientService_RegisterUnbindsLeadWhenLeadAlreadyClaimed(t *testing.T) {
 	// Двое разных Telegram-юзеров открыли один deep-link /start=<lead_id>: lead уже занят.
 	// Второй должен зарегистрироваться без привязки, а не залочиться навсегда.
-	store := &fakeClientStore{failIfLeadIDSet: true}
+	store := &fakeClientStore{leadCollisionErr: domain.ErrLeadAlreadyClaimed}
 	svc := service.NewClientService(store, "token", "secret", time.Hour)
 	leadID := uuid.New()
 
@@ -83,6 +85,21 @@ func TestClientService_RegisterUnbindsLeadWhenLeadAlreadyClaimed(t *testing.T) {
 
 	if client.LeadID != nil {
 		t.Errorf("expected lead to be unbound after lead_id collision, got %v", client.LeadID)
+	}
+}
+
+func TestClientService_RegisterDoesNotMaskNonDuplicateError(t *testing.T) {
+	// Не-duplicate сбой на вставке (обрыв соединения и т.п.) НЕ должен уводить в ветку
+	// "сбросить lead_id и повторить" — иначе клиент создаётся без привязки к заявке, а сбой
+	// маскируется под успех. Ошибка обязана пробрасываться.
+	store := &fakeClientStore{leadCollisionErr: errors.New("connection refused")}
+	svc := service.NewClientService(store, "token", "secret", time.Hour)
+	leadID := uuid.New()
+
+	_, err := svc.Register(context.Background(), 99, "u", "Имя", &leadID)
+
+	if err == nil {
+		t.Fatal("expected non-duplicate create error to propagate, got nil")
 	}
 }
 

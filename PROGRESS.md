@@ -161,3 +161,50 @@ ReleaseMode).
 **Следующий шаг:** прод-готовность (webhook, outbox, CORS-whitelist, обязательный `JWT_SECRET`,
 `gin.ReleaseMode`) — частью как backend-задачи для Hiki; либо ратификация решений §5 из
 `learning-phase3-5.md`.
+
+---
+
+### 2026-06-09 — Аудит проекта (бэкенд/бизнес/данные) + прод-гейт A0–A3
+
+**Аудит (3 агента):** бэкенд-код здоров; главный разрыв — доменная модель моделирует
+однокомпанийного курьера, а бизнес двусторонний (РФ + партнёр Гуанчжоу), трёхполосный
+(карго/белый/выкуп), мультиканальный по платежам. Развилка решена Hiki: **сначала прод-гейт,
+потом домен**; платежи — единственный доменный кусок этой итерации; полосы/партнёр — заморожены
+до ратификации.
+
+**Модель работы уточнена (value-based split):** Hiki параллельно учит .NET руками, поэтому
+прод-гейт/инфру пишет Claude (Hiki ревьюит дифы), а высокоценный доменный Go (платежи) Hiki
+пишет сам с менторством. Не возврат к build-then-teach. (память `working-model` обновлена.)
+
+**Сделано (прод-гейт, всё под `go build/vet/test` зелёное; миграции и репо-тесты прогнаны на живой БД):**
+- **A0 (БЛОКЕР):** `config.Validate()` (fail-fast вне dev: пустой/дефолтный `JWT_SECRET`,
+  `DATABASE_URL`, `sslmode=disable`, отсутствие токена/чата бота → `os.Exit(1)`, `errors.Join`).
+  Вызов из `main`. Юнит-тесты на Validate.
+- **A1a (баг):** `ClientService.Register` больше не маскирует любую ошибку `Create` под гонку —
+  репо транслирует `23505` в `domain.ErrClientExists` / `ErrLeadAlreadyClaimed` (по
+  `ConstraintName`, через `pgconn.PgError`), сервис разбирает их `switch`'ем, прочие ошибки
+  пробрасывает. Регресс-тест на не-duplicate ошибку.
+- **A1b:** `service.Background` (WaitGroup-дренаж фоновых задач). Все fire-and-forget уведомления
+  + цикл бота идут через него; `main` ждёт `bg.Wait` после `server.Shutdown`. Тесты на
+  блокировку/таймаут.
+- **A1c:** `lead.UpdateStatus` → одно `UPDATE … RETURNING` (атомарно, без read-after-write
+  гонки); `shipment.UpdateStatus` читает строку с `FOR UPDATE` (гонка `delivered_at`).
+- **A2:** CORS-whitelist (`ALLOWED_ORIGINS`), `gin.ReleaseMode` вне dev, пул БД
+  (`SetMaxOpenConns` и пр.), HTTP-таймауты (`Read/Write/Idle`), rate-limit middleware на
+  публичных POST (token-bucket по IP, без deps), multi-stage Dockerfile (distroless nonroot,
+  бинари `api`+`migrate`), app+migrate сервисы в compose, CI бэкенда (Postgres-сервис,
+  `build`/`vet`/`migrate up`/`test`). Docker-образ собран и проверен.
+- **A3:** миграция `000009` — индексы на `messages.manager_id`, `shipment_status_events.changed_by`.
+  Up/down прогнаны (8→9→8→9).
+- `docs/tech-debt.md`: #5/#9/#10 → Закрыто; #11/#15 частично закрыты (дренаж есть, outbox нет);
+  новый #20 (rate-limit доверяет X-Forwarded-For).
+
+**Следующий шаг:** **Фаза B — модель платежей (`Payment`), пишет Hiki** с менторством
+(домен → миграция `000010` (SQL за Claude) → репо → сервис → хендлеры `POST/GET
+/api/shipments/:id/payments` → тесты). Референсы-паттерны из этой сессии: sentinel-ошибки
+(A1a), транзакции/`RETURNING` (A1c). Затем — ратификация замороженных вопросов (полосы,
+партнёр, поток статусов, кардинальность lead_id, явная конверсия Lead→Client) и webhook при
+выборе хоста.
+
+**Открытые вопросы (на ратификацию, до кода):** полосы карго/белый/выкуп (3 потока vs метка);
+партнёр Гуанчжоу (актор vs вне системы); каналы платежей (конкретный список значений).

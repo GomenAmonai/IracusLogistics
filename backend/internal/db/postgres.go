@@ -32,6 +32,14 @@ func Connect(ctx context.Context, databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	// Пул соединений: по умолчанию database/sql не ограничивает число открытых соединений —
+	// под нагрузкой это исчерпает max_connections управляемого Postgres. Задаём явные рамки и
+	// время жизни, чтобы переиспользовать и вовремя закрывать простаивающие/протухшие коннекты.
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+
 	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := sqlDB.PingContext(pingCtx); err != nil {

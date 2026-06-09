@@ -21,16 +21,17 @@ type LeadStore interface {
 	Create(ctx context.Context, lead *domain.Lead) error
 	List(ctx context.Context) ([]domain.Lead, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Lead, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) (*domain.Lead, error)
 }
 
 type LeadService struct {
 	store    LeadStore
 	notifier Notifier
+	bg       *Background
 }
 
-func NewLeadService(store LeadStore, notifier Notifier) *LeadService {
-	return &LeadService{store: store, notifier: notifier}
+func NewLeadService(store LeadStore, notifier Notifier, bg *Background) *LeadService {
+	return &LeadService{store: store, notifier: notifier, bg: bg}
 }
 
 // CreateLeadInput — данные публичной формы. weight/volume опциональны (NullDecimal),
@@ -86,27 +87,25 @@ func (s *LeadService) UpdateStatus(ctx context.Context, id uuid.UUID, status dom
 	if !status.IsValid() {
 		return nil, fmt.Errorf("%w: unknown status %q", ErrValidation, status)
 	}
-	if err := s.store.UpdateStatus(ctx, id, status); err != nil {
-		return nil, err
-	}
 
-	return s.store.GetByID(ctx, id)
+	return s.store.UpdateStatus(ctx, id, status)
 }
 
-// notifyNewLead уведомляет менеджера в фоне: горутина — чтобы латентность Telegram не
-// тормозила ответ клиенту; context.Background(), т.к. ctx запроса отменится сразу после
-// ответа; ошибку только логируем — создание лида не должно падать из-за уведомления.
+// notifyNewLead уведомляет менеджера в фоне: задача в Background — чтобы латентность Telegram
+// не тормозила ответ клиенту; context.Background(), т.к. ctx запроса отменится сразу после
+// ответа; ошибку только логируем — создание лида не должно падать из-за уведомления. Через
+// Background, а не bare go, чтобы отправка дренировалась при остановке процесса.
 //
-// NOTE: MVP — fire-and-forget без graceful shutdown и ретраев; см. docs/tech-debt.md
+// NOTE: MVP — без ретраев и персистентности (не полный outbox); см. docs/tech-debt.md
 func (s *LeadService) notifyNewLead(lead *domain.Lead) {
 	if s.notifier == nil {
 		return
 	}
-	go func() {
+	s.bg.Go(func() {
 		if err := s.notifier.NotifyNewLead(context.Background(), lead); err != nil {
 			slog.Error("notify new lead", "lead_id", lead.ID, "error", err)
 		}
-	}()
+	})
 }
 
 func (i CreateLeadInput) normalized() CreateLeadInput {

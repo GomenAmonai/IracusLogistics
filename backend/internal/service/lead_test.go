@@ -33,12 +33,13 @@ func (f *fakeLeadStore) GetByID(ctx context.Context, id uuid.UUID) (*domain.Lead
 	return f.lead, nil
 }
 
-func (f *fakeLeadStore) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) error {
+func (f *fakeLeadStore) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) (*domain.Lead, error) {
 	f.updated = status
-	if f.lead != nil {
-		f.lead.Status = status
+	if f.lead == nil {
+		return nil, domain.ErrNotFound
 	}
-	return nil
+	f.lead.Status = status
+	return f.lead, nil
 }
 
 type noopNotifier struct{}
@@ -46,7 +47,7 @@ type noopNotifier struct{}
 func (noopNotifier) NotifyNewLead(ctx context.Context, lead *domain.Lead) error { return nil }
 
 func TestLeadService_CreateRejectsMissingName(t *testing.T) {
-	svc := service.NewLeadService(&fakeLeadStore{}, noopNotifier{})
+	svc := service.NewLeadService(&fakeLeadStore{}, noopNotifier{}, nil)
 
 	_, err := svc.Create(context.Background(), service.CreateLeadInput{
 		Phone:    "+79990001122",
@@ -60,7 +61,7 @@ func TestLeadService_CreateRejectsMissingName(t *testing.T) {
 }
 
 func TestLeadService_UpdateStatusRejectsUnknownStatus(t *testing.T) {
-	svc := service.NewLeadService(&fakeLeadStore{}, noopNotifier{})
+	svc := service.NewLeadService(&fakeLeadStore{}, noopNotifier{}, nil)
 
 	_, err := svc.UpdateStatus(context.Background(), uuid.New(), domain.LeadStatus("bogus"))
 
@@ -71,7 +72,7 @@ func TestLeadService_UpdateStatusRejectsUnknownStatus(t *testing.T) {
 
 func TestLeadService_UpdateStatusAcceptsKnownStatus(t *testing.T) {
 	store := &fakeLeadStore{lead: &domain.Lead{Status: domain.LeadStatusNew}}
-	svc := service.NewLeadService(store, noopNotifier{})
+	svc := service.NewLeadService(store, noopNotifier{}, nil)
 
 	lead, err := svc.UpdateStatus(context.Background(), uuid.New(), domain.LeadStatusContacted)
 	if err != nil {

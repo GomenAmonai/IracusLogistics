@@ -1,10 +1,19 @@
 package domain
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+// ErrClientExists — клиент с таким telegram_id уже зарегистрирован (нарушен unique по
+// telegram_id). Для Register это легитимная гонка: перечитать и вернуть существующего.
+var ErrClientExists = errors.New("client already exists")
+
+// ErrLeadAlreadyClaimed — этот lead уже привязан к другому клиенту (нарушен partial-unique
+// uq_clients_lead_id). Register по нему заводит клиента без привязки к заявке.
+var ErrLeadAlreadyClaimed = errors.New("lead already claimed by another client")
 
 // Client — клиент, авторизованный через Telegram. Создаётся после подтверждения сделки.
 type Client struct {

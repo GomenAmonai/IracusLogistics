@@ -19,12 +19,25 @@ type RouterDeps struct {
 	ShipmentService *service.ShipmentService
 	MessageService  *service.MessageService
 	JWTSecret       string
+
+	// AllowedOrigins — белый список CORS. AllowAnyOrigin (только dev) отдаёт «*» и игнорирует
+	// список. ReleaseMode переводит Gin в прод-режим (без debug-логов).
+	AllowedOrigins []string
+	AllowAnyOrigin bool
+	ReleaseMode    bool
 }
 
 func NewRouter(deps RouterDeps) *gin.Engine {
+	if deps.ReleaseMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(corsMiddleware())
+	router.Use(corsMiddleware(deps.AllowedOrigins, deps.AllowAnyOrigin))
+
+	// Лимитер на публичных ручках: защита от спама лидами и перебора логина/авторизации.
+	publicLimit := middleware.RateLimit(1, 5)
 
 	health := handlers.NewHealthHandler(deps.DB)
 	lead := handlers.NewLeadHandler(deps.LeadService)
@@ -38,9 +51,9 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	{
 		// Публичные ручки.
 		api.GET("/health", health.Handle)
-		api.POST("/leads", lead.Create)                     // форма с сайта, без авторизации
-		api.POST("/auth/login", auth.Login)                 // менеджер: email + пароль
-		api.POST("/app/auth/telegram", clientAuth.Telegram) // клиент: Telegram initData
+		api.POST("/leads", publicLimit, lead.Create)                     // форма с сайта, без авторизации
+		api.POST("/auth/login", publicLimit, auth.Login)                 // менеджер: email + пароль
+		api.POST("/app/auth/telegram", publicLimit, clientAuth.Telegram) // клиент: Telegram initData
 
 		// Менеджерские ручки: валидный JWT с role=manager.
 		manager := api.Group("")
@@ -74,9 +87,25 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	return router
 }
 
-func corsMiddleware() gin.HandlerFunc {
+// corsMiddleware отдаёт CORS-заголовки. allowAny (только dev) разрешает любой origin через «*».
+// Иначе Access-Control-Allow-Origin выставляется, только если Origin запроса в белом списке —
+// чужие источники браузер заблокирует. Пустой список вне dev => запрещены все (deny by default).
+func corsMiddleware(allowedOrigins []string, allowAny bool) gin.HandlerFunc {
+	allowed := make(map[string]struct{}, len(allowedOrigins))
+	for _, origin := range allowedOrigins {
+		allowed[origin] = struct{}{}
+	}
+
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		switch origin := c.GetHeader("Origin"); {
+		case allowAny:
+			c.Header("Access-Control-Allow-Origin", "*")
+		case origin != "":
+			if _, ok := allowed[origin]; ok {
+				c.Header("Access-Control-Allow-Origin", origin)
+				c.Header("Vary", "Origin") // ответ зависит от Origin — не кэшировать одинаково для всех
+			}
+		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 

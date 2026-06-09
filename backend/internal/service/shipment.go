@@ -57,10 +57,11 @@ type ShipmentService struct {
 	store    ShipmentStore
 	clients  ClientReader
 	notifier ClientNotifier
+	bg       *Background
 }
 
-func NewShipmentService(store ShipmentStore, clients ClientReader, notifier ClientNotifier) *ShipmentService {
-	return &ShipmentService{store: store, clients: clients, notifier: notifier}
+func NewShipmentService(store ShipmentStore, clients ClientReader, notifier ClientNotifier, bg *Background) *ShipmentService {
+	return &ShipmentService{store: store, clients: clients, notifier: notifier, bg: bg}
 }
 
 // CreateShipmentInput — данные для заведения груза менеджером. client_id обязателен и
@@ -195,12 +196,12 @@ func (s *ShipmentService) UpdateStatus(
 // Telegram не тормозит ответ менеджеру, ошибка только логируется. context.Background(),
 // т.к. ctx запроса отменится сразу после ответа.
 //
-// NOTE: MVP — fire-and-forget без ретраев и graceful shutdown; см. docs/tech-debt.md
+// NOTE: MVP — без ретраев и персистентности (не полный outbox); см. docs/tech-debt.md
 func (s *ShipmentService) notifyClient(shipment *domain.Shipment) {
 	if s.notifier == nil {
 		return
 	}
-	go func() {
+	s.bg.Go(func() {
 		ctx := context.Background()
 		client, err := s.clients.GetByID(ctx, shipment.ClientID)
 		if err != nil {
@@ -210,7 +211,7 @@ func (s *ShipmentService) notifyClient(shipment *domain.Shipment) {
 		if err := s.notifier.NotifyShipmentStatus(ctx, client.TelegramID, shipment); err != nil {
 			slog.Error("notify shipment status", "shipment_id", shipment.ID, "error", err)
 		}
-	}()
+	})
 }
 
 // generateTrackingKey генерирует уникальный трек-ключ, повторяя при маловероятном

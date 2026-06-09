@@ -16,5 +16,35 @@ services:
       timeout: 5s
       retries: 10
 
+  # Применяет миграции один раз и завершается; api ждёт его успешного выхода.
+  migrate:
+    build:
+      context: ./backend
+    container_name: icaris-logistic-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://icaris:icaris@postgres:5432/icaris_logistic?sslmode=disable
+    entrypoint: ["/app/migrate", "up"]
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend
+    container_name: icaris-logistic-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      # APP_ENV=development => Validate() пропускает dev-секрет и sslmode=disable (локальный запуск).
+      APP_ENV: development
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://icaris:icaris@postgres:5432/icaris_logistic?sslmode=disable
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_data:

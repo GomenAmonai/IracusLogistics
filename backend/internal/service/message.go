@@ -38,6 +38,7 @@ type MessageService struct {
 	clients       ClientReader
 	managerNotify ManagerNotifier
 	clientNotify  ClientMessageNotifier
+	bg            *Background
 }
 
 func NewMessageService(
@@ -46,6 +47,7 @@ func NewMessageService(
 	clients ClientReader,
 	managerNotify ManagerNotifier,
 	clientNotify ClientMessageNotifier,
+	bg *Background,
 ) *MessageService {
 	return &MessageService{
 		messages:      messages,
@@ -53,6 +55,7 @@ func NewMessageService(
 		clients:       clients,
 		managerNotify: managerNotify,
 		clientNotify:  clientNotify,
+		bg:            bg,
 	}
 }
 
@@ -141,7 +144,7 @@ func (s *MessageService) notifyManager(shipment *domain.Shipment, clientID uuid.
 	if s.managerNotify == nil {
 		return
 	}
-	go func() {
+	s.bg.Go(func() {
 		ctx := context.Background()
 		client, err := s.clients.GetByID(ctx, clientID)
 		if err != nil {
@@ -151,14 +154,14 @@ func (s *MessageService) notifyManager(shipment *domain.Shipment, clientID uuid.
 		if err := s.managerNotify.NotifyClientMessage(ctx, client, shipment, text); err != nil {
 			slog.Error("notify client message", "shipment_id", shipment.ID, "error", err)
 		}
-	}()
+	})
 }
 
 func (s *MessageService) notifyClient(shipment *domain.Shipment, text string) {
 	if s.clientNotify == nil {
 		return
 	}
-	go func() {
+	s.bg.Go(func() {
 		ctx := context.Background()
 		client, err := s.clients.GetByID(ctx, shipment.ClientID)
 		if err != nil {
@@ -168,5 +171,5 @@ func (s *MessageService) notifyClient(shipment *domain.Shipment, text string) {
 		if err := s.clientNotify.NotifyManagerReply(ctx, client.TelegramID, shipment, text); err != nil {
 			slog.Error("notify manager reply", "shipment_id", shipment.ID, "error", err)
 		}
-	}()
+	})
 }

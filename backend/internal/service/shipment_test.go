@@ -69,7 +69,7 @@ func (f *fakeClientReader) GetByTelegramID(ctx context.Context, telegramID int64
 }
 
 func TestShipmentService_CreateRequiresClientID(t *testing.T) {
-	svc := service.NewShipmentService(&fakeShipmentStore{}, &fakeClientReader{}, nil)
+	svc := service.NewShipmentService(&fakeShipmentStore{}, &fakeClientReader{}, nil, nil)
 
 	_, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{})
 
@@ -80,7 +80,7 @@ func TestShipmentService_CreateRequiresClientID(t *testing.T) {
 
 func TestShipmentService_CreateRejectsUnknownClient(t *testing.T) {
 	clients := &fakeClientReader{getErr: domain.ErrNotFound}
-	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil)
+	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil, nil)
 
 	_, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{ClientID: uuid.New()})
 
@@ -93,7 +93,7 @@ func TestShipmentService_CreateGeneratesPrefixedTrackingKey(t *testing.T) {
 	clientID := uuid.New()
 	store := &fakeShipmentStore{}
 	clients := &fakeClientReader{client: &domain.Client{ID: clientID}}
-	svc := service.NewShipmentService(store, clients, nil)
+	svc := service.NewShipmentService(store, clients, nil, nil)
 
 	shipment, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{ClientID: clientID})
 	if err != nil {
@@ -108,7 +108,7 @@ func TestShipmentService_CreateGeneratesPrefixedTrackingKey(t *testing.T) {
 func TestShipmentService_CreateStartsAsPending(t *testing.T) {
 	clientID := uuid.New()
 	clients := &fakeClientReader{client: &domain.Client{ID: clientID}}
-	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil)
+	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil, nil)
 
 	shipment, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{ClientID: clientID})
 	if err != nil {
@@ -122,7 +122,7 @@ func TestShipmentService_CreateStartsAsPending(t *testing.T) {
 
 func TestShipmentService_UpdateStatusRejectsUnknownStatus(t *testing.T) {
 	store := &fakeShipmentStore{}
-	svc := service.NewShipmentService(store, &fakeClientReader{}, nil)
+	svc := service.NewShipmentService(store, &fakeClientReader{}, nil, nil)
 
 	_, err := svc.UpdateStatus(context.Background(), uuid.New(), uuid.New(), domain.ShipmentStatus("bogus"), "")
 
@@ -133,7 +133,7 @@ func TestShipmentService_UpdateStatusRejectsUnknownStatus(t *testing.T) {
 
 func TestShipmentService_UpdateStatusDoesNotTouchStoreOnInvalidStatus(t *testing.T) {
 	store := &fakeShipmentStore{}
-	svc := service.NewShipmentService(store, &fakeClientReader{}, nil)
+	svc := service.NewShipmentService(store, &fakeClientReader{}, nil, nil)
 
 	_, _ = svc.UpdateStatus(context.Background(), uuid.New(), uuid.New(), domain.ShipmentStatus("bogus"), "")
 
@@ -144,7 +144,7 @@ func TestShipmentService_UpdateStatusDoesNotTouchStoreOnInvalidStatus(t *testing
 
 func TestShipmentService_UpdateStatusReturnsUpdatedStatus(t *testing.T) {
 	store := &fakeShipmentStore{}
-	svc := service.NewShipmentService(store, &fakeClientReader{client: &domain.Client{}}, nil)
+	svc := service.NewShipmentService(store, &fakeClientReader{client: &domain.Client{}}, nil, nil)
 
 	updated, err := svc.UpdateStatus(context.Background(), uuid.New(), uuid.New(), domain.ShipmentStatusInTransit, "в пути")
 	if err != nil {

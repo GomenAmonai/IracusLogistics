@@ -75,24 +75,30 @@ func (s *ClientService) Register(
 		LeadID:     leadID,
 	}
 	if err := s.clients.Create(ctx, client); err != nil {
-		// Гонка по telegram_id: параллельный Register тем же telegram_id уже создал клиента и
-		// упёрся в unique-индекс. Перечитываем — это нормальный исход, а не ошибка.
-		if recovered, getErr := s.clients.GetByTelegramID(ctx, telegramID); getErr == nil {
-			return recovered, nil
-		}
-		// Иначе вероятная причина — partial-unique uq_clients_lead_id: этот lead уже привязан к
-		// другому клиенту (двое открыли один deep-link /start=<lead_id>). Не блокируем регистрацию
-		// навсегда — заводим клиента без привязки к заявке (leadID привязывается best-effort).
-		if client.LeadID != nil {
-			client.LeadID = nil
-			if retryErr := s.clients.Create(ctx, client); retryErr == nil {
-				return client, nil
-			}
+		switch {
+		case errors.Is(err, domain.ErrClientExists):
+			// Гонка по telegram_id: параллельный Register тем же telegram_id уже создал клиента.
+			// Перечитываем — это нормальный исход, а не ошибка.
 			if recovered, getErr := s.clients.GetByTelegramID(ctx, telegramID); getErr == nil {
 				return recovered, nil
 			}
+			return nil, fmt.Errorf("register: re-read after telegram_id conflict: %w", err)
+
+		case errors.Is(err, domain.ErrLeadAlreadyClaimed) && client.LeadID != nil:
+			// Этот lead уже привязан к другому клиенту (двое открыли один deep-link
+			// /start=<lead_id>). Не блокируем регистрацию навсегда — заводим клиента без привязки
+			// к заявке (leadID привязывается best-effort).
+			client.LeadID = nil
+			if retryErr := s.clients.Create(ctx, client); retryErr != nil {
+				return nil, fmt.Errorf("register: create after unbinding lead: %w", retryErr)
+			}
+			return client, nil
+
+		default:
+			// Любая прочая ошибка (обрыв соединения, дедлок, NOT NULL) — НЕ маскируем под гонку и
+			// НЕ создаём клиента без привязки к заявке. Пробрасываем.
+			return nil, fmt.Errorf("register: create client: %w", err)
 		}
-		return nil, err
 	}
 
 	return client, nil
