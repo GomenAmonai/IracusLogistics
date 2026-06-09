@@ -19,14 +19,15 @@ services:
     branch: main
     region: frankfurt
     # free «засыпает» через 15 мин простоя → бот на long polling умолкает.
-    # Для всегда-живого бота нужен plan: starter (и тогда же работает preDeployCommand ниже).
+    # Для всегда-живого бота нужен plan: starter.
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /api/health
-    # Прогон миграций до старта новой версии. Доступно на платных планах; на free —
-    # прогнать миграции один раз вручную против внешнего URL БД (см. инструкцию в чате).
-    preDeployCommand: /app/migrate up
+    # МИГРАЦИИ: preDeployCommand (/app/migrate up) НЕ поддерживается на free-плане — Render
+    # отвергает блюпринт. На free прогоняем миграции один раз вручную против внешнего URL БД:
+    #   cd backend && DATABASE_URL='<External Database URL>' go run ./cmd/migrate up
+    # При апгрейде на starter+ верни строку `preDeployCommand: /app/migrate up` под healthCheckPath.
     envVars:
       - key: APP_ENV
         value: production
