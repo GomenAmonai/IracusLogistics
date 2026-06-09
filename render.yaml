@@ -1,0 +1,44 @@
+# Render Blueprint — staging-деплой бэкенда Icaris (Postgres + API).
+# ВНИМАНИЕ: у Render нет РФ-регионов. Под 152-ФЗ реальные ПДн клиентов позже переедут на
+# РФ-хостинг — это окружение для обкатки полного потока (бот + WebApp), не финальный прод.
+#
+# Деплой: на render.com → Blueprints → New → подключить репозиторий GomenAmonai/IracusLogistics.
+# Секреты (TELEGRAM_BOT_TOKEN, MANAGER_CHAT_ID) Render запросит в дашборде при создании.
+
+databases:
+  - name: icaris-db
+    databaseName: icaris_logistic
+    user: icaris
+    region: frankfurt
+    plan: free # free-БД Render истекает (~30 дней) — для постоянной нужен платный план
+
+services:
+  - type: web
+    name: icaris-api
+    runtime: docker
+    branch: main
+    region: frankfurt
+    # free «засыпает» через 15 мин простоя → бот на long polling умолкает.
+    # Для всегда-живого бота нужен plan: starter (и тогда же работает preDeployCommand ниже).
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    # Прогон миграций до старта новой версии. Доступно на платных планах; на free —
+    # прогнать миграции один раз вручную против внешнего URL БД (см. инструкцию в чате).
+    preDeployCommand: /app/migrate up
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: icaris-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true # Render сгенерит стойкий секрет (Validate() отвергает dev-дефолт вне dev)
+      - key: ALLOWED_ORIGINS
+        value: https://iracus-logistics.vercel.app # origin WebApp для CORS-whitelist (deny-by-default в prod)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false # секрет — задать в дашборде Render
+      - key: MANAGER_CHAT_ID
+        sync: false # секрет — задать в дашборде Render

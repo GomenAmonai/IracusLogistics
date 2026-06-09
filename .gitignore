@@ -22,6 +22,9 @@ frontend/dist/
 
 # Agent/test artifacts
 .playwright-mcp/
+# graphify кэш: содержит сырой контент репо (включая случайно попавшие секреты) — не коммитить
+graphify-out/
+iracus-landing-full.jpeg
 
 # Higgsfield raw renders (source; optimized copies live in frontend/public)
 assets/hero/
