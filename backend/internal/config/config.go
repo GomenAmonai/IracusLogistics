@@ -39,8 +39,10 @@ func Load() Config {
 		JWTSecret: getEnv("JWT_SECRET", devDefaultJWTSecret),
 		JWTTTL:    getEnvDuration("JWT_TTL", 24*time.Hour),
 
-		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
-		ManagerChatID:    getEnv("MANAGER_CHAT_ID", ""),
+		// TrimSpace: секреты часто прилетают из env/дашбордов с хвостовым "\n" (копипаст,
+		// переменные Railway) — для токена и числового chat_id это ломает парсинг на старте.
+		TelegramBotToken: strings.TrimSpace(getEnv("TELEGRAM_BOT_TOKEN", "")),
+		ManagerChatID:    strings.TrimSpace(getEnv("MANAGER_CHAT_ID", "")),
 
 		AllowedOrigins: getEnvList("ALLOWED_ORIGINS"),
 	}
