@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"icaris-logistic/backend/internal/bot"
 	"icaris-logistic/backend/internal/config"
 	"icaris-logistic/backend/internal/db"
@@ -18,6 +20,11 @@ import (
 )
 
 func main() {
+	// В dev подхватываем backend/.env, чтобы `go run` видел переменные без ручного export.
+	// godotenv НЕ переопределяет уже заданные env-переменные, поэтому в проде (где их инжектит
+	// платформа или docker-compose) вызов — безопасный no-op. Отсутствие файла ошибкой не считаем.
+	_ = godotenv.Load()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

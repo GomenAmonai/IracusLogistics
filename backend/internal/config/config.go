@@ -32,7 +32,7 @@ type Config struct {
 func Load() Config {
 	return Config{
 		AppEnv:      getEnv("APP_ENV", envDevelopment),
-		HTTPAddr:    getEnv("HTTP_ADDR", ":8080"),
+		HTTPAddr:    httpAddr(),
 		DatabaseURL: getEnv("DATABASE_URL", devDefaultDatabaseURL),
 
 		// Dev-дефолт секрета удобен локально; Validate() запрещает его вне development.
@@ -96,6 +96,20 @@ func getEnv(key string, fallback string) string {
 	}
 
 	return value
+}
+
+// httpAddr выбирает адрес прослушивания. Приоритет: явный HTTP_ADDR (полный адрес вида ":8080"),
+// затем PORT (его назначают облачные платформы — Render/Heroku — и сервис ОБЯЗАН слушать именно
+// его, иначе health-check платформы не достучится), затем dev-дефолт.
+func httpAddr() string {
+	if addr := os.Getenv("HTTP_ADDR"); addr != "" {
+		return addr
+	}
+	if port := os.Getenv("PORT"); port != "" {
+		return ":" + port
+	}
+
+	return ":8080"
 }
 
 // getEnvDuration парсит длительность в формате time.ParseDuration ("24h", "30m").

@@ -55,3 +55,12 @@ func TestValidatePassesWithProperProductionConfig(t *testing.T) {
 		t.Fatalf("proper production config should pass, got: %v", err)
 	}
 }
+
+func TestHTTPAddrFallsBackToPortWhenAddrUnset(t *testing.T) {
+	t.Setenv("HTTP_ADDR", "")
+	t.Setenv("PORT", "10000")
+
+	if got := httpAddr(); got != ":10000" {
+		t.Fatalf("expected PORT to drive the listen address, got %q", got)
+	}
+}
