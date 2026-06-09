@@ -36,9 +36,6 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	router.Use(gin.Recovery())
 	router.Use(corsMiddleware(deps.AllowedOrigins, deps.AllowAnyOrigin))
 
-	// Лимитер на публичных ручках: защита от спама лидами и перебора логина/авторизации.
-	publicLimit := middleware.RateLimit(1, 5)
-
 	health := handlers.NewHealthHandler(deps.DB)
 	lead := handlers.NewLeadHandler(deps.LeadService)
 	auth := handlers.NewAuthHandler(deps.AuthService)
@@ -49,11 +46,12 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 
 	api := router.Group("/api")
 	{
-		// Публичные ручки.
+		// Публичные ручки. Свой лимитер на каждую: общий бакет дал бы спаму лидами
+		// выбить логин с того же IP (NAT/прокси). Защита от спама и перебора.
 		api.GET("/health", health.Handle)
-		api.POST("/leads", publicLimit, lead.Create)                     // форма с сайта, без авторизации
-		api.POST("/auth/login", publicLimit, auth.Login)                 // менеджер: email + пароль
-		api.POST("/app/auth/telegram", publicLimit, clientAuth.Telegram) // клиент: Telegram initData
+		api.POST("/leads", middleware.RateLimit(1, 5), lead.Create)                     // форма с сайта, без авторизации
+		api.POST("/auth/login", middleware.RateLimit(1, 5), auth.Login)                 // менеджер: email + пароль
+		api.POST("/app/auth/telegram", middleware.RateLimit(1, 5), clientAuth.Telegram) // клиент: Telegram initData
 
 		// Менеджерские ручки: валидный JWT с role=manager.
 		manager := api.Group("")
@@ -97,13 +95,16 @@ func corsMiddleware(allowedOrigins []string, allowAny bool) gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		switch origin := c.GetHeader("Origin"); {
-		case allowAny:
+		if allowAny {
 			c.Header("Access-Control-Allow-Origin", "*")
-		case origin != "":
-			if _, ok := allowed[origin]; ok {
-				c.Header("Access-Control-Allow-Origin", origin)
-				c.Header("Vary", "Origin") // ответ зависит от Origin — не кэшировать одинаково для всех
+		} else {
+			// Ответ зависит от Origin (эхо только для белого списка) — помечаем Vary даже когда
+			// origin не совпал, иначе общий кэш мог бы отдать без-CORS ответ доверенному origin.
+			c.Header("Vary", "Origin")
+			if origin := c.GetHeader("Origin"); origin != "" {
+				if _, ok := allowed[origin]; ok {
+					c.Header("Access-Control-Allow-Origin", origin)
+				}
 			}
 		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

@@ -56,6 +56,11 @@ jobs:
       - name: Migrate up
         run: go run ./cmd/migrate up
 
+      # Проверяем обратимость свежей миграции (database.md: тестировать оба направления),
+      # затем возвращаем схему вверх — тесты репозиториев ждут полную схему.
+      - name: Migrate down/up roundtrip
+        run: go run ./cmd/migrate down && go run ./cmd/migrate up
+
       - name: Test
         run: go test ./...
 
