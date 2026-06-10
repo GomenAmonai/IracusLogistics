@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
@@ -73,7 +75,10 @@ func New(token, chatID string) (*Bot, error) {
 		return nil, fmt.Errorf("bot: parse chat id: %w", err)
 	}
 
-	api, err := tgbotapi.NewBotAPI(token)
+	// Свой HTTP-клиент с таймаутом: дефолтный в библиотеке — без таймаута, и зависшее
+	// соединение остановило бы outbox-диспетчер (единственная горутина доставки) навсегда.
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	api, err := tgbotapi.NewBotAPIWithClient(token, tgbotapi.APIEndpoint, httpClient)
 	if err != nil {
 		// Ошибка библиотеки может содержать URL с токеном, поэтому наружу её не отдаём.
 		// Но категорию сбоя (тип ошибки) залогировать безопасно — иначе диагностики ноль.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -46,10 +47,10 @@ func (h TelegramWebhookHandler) Handle(c *gin.Context) {
 	}
 
 	if err := h.processor.ProcessUpdateJSON(c.Request.Context(), body); err != nil {
-		// Нечитаемый апдейт: 400 без ретраев со стороны Telegram нам и нужен — повтор
-		// того же тела не станет валиднее.
-		respondError(c, http.StatusBadRequest, "invalid_body", "invalid update payload")
-		return
+		// Нечитаемый апдейт логируем, но отвечаем 2xx: Telegram повторяет доставку на
+		// ЛЮБОЙ не-2xx ответ, а повтор того же тела валиднее не станет — ретраи только
+		// зашумят логи и очередь апдейтов.
+		slog.Error("telegram webhook: process update", "error", err)
 	}
 
 	c.Status(http.StatusNoContent)

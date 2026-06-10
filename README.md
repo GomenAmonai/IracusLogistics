@@ -94,6 +94,9 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
 | `TELEGRAM_BOT_TOKEN` | токен бота; пусто → бот выключен | `""` |
 | `MANAGER_CHAT_ID` | чат для уведомлений менеджеру | `""` |
 | `ALLOWED_ORIGINS` | CORS-белый список origin'ов, через запятую | пусто (вне dev кросс-домен запрещён) |
+| `TRUSTED_PROXIES` | IP/CIDR прокси, чьим X-Forwarded-For верим | приватные диапазоны + CGNAT |
+| `TELEGRAM_WEBHOOK_URL` | https-URL ручки webhook; задан → бот без polling | пусто (long polling) |
+| `TELEGRAM_WEBHOOK_SECRET` | секрет webhook (обязателен вместе с URL) | `""` |
 
 Фронтенд: `VITE_API_BASE` — базовый URL бэкенда (без пути, код добавляет `/api`). Запекается
 в бандл **на этапе сборки**. Локально не задаётся (относительный `/api` через прокси Vite).
@@ -141,12 +144,16 @@ PATCH /api/leads/{id}                 # { "status": "new|contacted|converted|rej
 
 GET   /api/clients                    # зарегистрированные клиенты
 
-POST  /api/shipments                  # { "client_id", "from_city", "to_city", "weight", "volume", "price", "currency", "status_note" }
+POST  /api/shipments                  # { "client_id", "lane", "from_city", "to_city", "weight", "volume", "price", "currency", "status_note" }
 GET   /api/shipments
 GET   /api/shipments/{id}             # → { "shipment", "history": [...] }
 PATCH /api/shipments/{id}/status      # { "status", "comment" } — статус из enum груза
 GET   /api/shipments/{id}/messages
 POST  /api/shipments/{id}/messages    # { "text" } — ответ менеджера
+
+POST  /api/shipments/{id}/payments              # { "amount", "currency"?, "channel", "status"?, "comment"? }
+GET   /api/shipments/{id}/payments
+PATCH /api/shipments/{id}/payments/{paymentID}  # { "status": "pending|confirmed|refunded" }
 ```
 
 Клиентские WebApp (`Authorization: Bearer <token>`, role=client):
@@ -159,8 +166,14 @@ POST  /api/app/shipments/{id}/messages  # { "text" }
 ```
 
 Статусы груза: `pending, picked_up, in_transit, customs_clear, in_warehouse,
-out_for_delivery, delivered, cancelled`. Чужой груз для клиента → 404 (существование не
-раскрываем). Ошибки в едином формате: `{"error": {"code": "...", "message": "..."}}`.
+out_for_delivery, delivered, cancelled`. Полосы: `cargo, white, buyout` (метка на грузе).
+Каналы платежа: `bank_transfer, card_sbp, cash, crypto`. Чужой груз для клиента → 404
+(существование не раскрываем). Ошибки в едином формате:
+`{"error": {"code": "...", "message": "..."}}`.
+
+Уведомления Telegram идут через outbox (таблица `notifications` + диспетчер с ретраями).
+Бот принимает апдейты long polling'ом либо webhook'ом (`POST /api/telegram/webhook`,
+включается переменными `TELEGRAM_WEBHOOK_*`).
 
 ## Тесты
 

@@ -67,13 +67,15 @@ func TestTelegramWebhookPassesBodyToProcessor(t *testing.T) {
 	}
 }
 
-func TestTelegramWebhookRespondsBadRequestOnProcessorError(t *testing.T) {
+func TestTelegramWebhookRespondsNoContentOnProcessorError(t *testing.T) {
 	processor := &fakeUpdateProcessor{err: errors.New("decode failed")}
 	handler := NewTelegramWebhookHandler(processor, "s3cret")
 
 	recorder := performWebhookRequest(handler, "s3cret", `not-json`)
 
-	if recorder.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 on processor error, got %d", recorder.Code)
+	// 2xx даже на нечитаемый апдейт: Telegram ретраит любой не-2xx, а повтор того же
+	// тела валиднее не станет.
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("expected 204 on processor error, got %d", recorder.Code)
 	}
 }
