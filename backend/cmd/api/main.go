@@ -55,12 +55,16 @@ func main() {
 	shipmentRepo := repository.NewShipmentRepository(gdb)
 	messageRepo := repository.NewMessageRepository(gdb)
 	paymentRepo := repository.NewPaymentRepository(gdb)
+	notificationRepo := repository.NewNotificationRepository(gdb)
 
 	notifier, err := bot.New(cfg.TelegramBotToken, cfg.ManagerChatID)
 	if err != nil {
 		logger.Error("init bot", "error", err)
 		os.Exit(1)
 	}
+	// Outbox: Notify* кладут уведомление в БД, RunOutbox доставляет с ретраями — сбой
+	// Telegram или рестарт процесса не теряет сообщение (техдолг #11/#15).
+	notifier.UseOutbox(notificationRepo)
 
 	// bg учитывает фоновые задачи (уведомления, цикл бота), чтобы дренировать их при остановке.
 	bg := service.NewBackground()
@@ -76,6 +80,9 @@ func main() {
 	// чтобы при остановке дождаться завершения текущей команды (Run выходит по ctx.Done).
 	bg.Go(func() {
 		notifier.Run(ctx, bot.RunDeps{Registrar: clientService, Lister: shipmentService})
+	})
+	bg.Go(func() {
+		notifier.RunOutbox(ctx)
 	})
 
 	isDev := cfg.AppEnv == "development"

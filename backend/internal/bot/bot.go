@@ -26,6 +26,8 @@ type Bot struct {
 	chatID int64
 	// disabled — режим no-op: токен не задан, ничего не шлём и не принимаем (dev без токена).
 	disabled bool
+	// outbox — персистентная очередь уведомлений (см. UseOutbox); nil => прямая отправка.
+	outbox OutboxStore
 }
 
 // ClientRegistrar создаёт/находит клиента по его Telegram-личности (реализует
@@ -206,24 +208,24 @@ func (b *Bot) sendStatus(ctx context.Context, deps RunDeps, chatID, telegramID i
 // NotifyNewLead шлёт уведомление о новом лиде в чат менеджера.
 //
 // NOTE: MVP — библиотека v5 не принимает context, поэтому ctx не ограничивает таймаут и не
-// отменяет отправку; зависший запрос блокирует вызывающую горутину; см. docs/tech-debt.md
+// отменяет прямую отправку; в режиме outbox ctx работает на постановке в очередь.
 func (b *Bot) NotifyNewLead(ctx context.Context, lead *domain.Lead) error {
-	return b.send(b.chatID, formatLeadMessage(lead))
+	return b.deliver(ctx, "lead_new", b.chatID, formatLeadMessage(lead))
 }
 
 // NotifyShipmentStatus уведомляет клиента о смене статуса груза (шлём на его telegram_id).
 func (b *Bot) NotifyShipmentStatus(ctx context.Context, telegramID int64, shipment *domain.Shipment) error {
-	return b.send(telegramID, formatStatusUpdate(shipment))
+	return b.deliver(ctx, "shipment_status", telegramID, formatStatusUpdate(shipment))
 }
 
 // NotifyClientMessage уведомляет менеджера о новом сообщении клиента.
 func (b *Bot) NotifyClientMessage(ctx context.Context, client *domain.Client, shipment *domain.Shipment, text string) error {
-	return b.send(b.chatID, formatClientMessage(client, shipment, text))
+	return b.deliver(ctx, "client_message", b.chatID, formatClientMessage(client, shipment, text))
 }
 
 // NotifyManagerReply уведомляет клиента об ответе менеджера (шлём на его telegram_id).
 func (b *Bot) NotifyManagerReply(ctx context.Context, telegramID int64, shipment *domain.Shipment, text string) error {
-	return b.send(telegramID, formatManagerReply(shipment, text))
+	return b.deliver(ctx, "manager_reply", telegramID, formatManagerReply(shipment, text))
 }
 
 // send — единая точка отправки: no-op в disabled-режиме, ошибку отдаёт без первопричины
