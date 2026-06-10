@@ -27,6 +27,10 @@ type Config struct {
 	// AllowedOrigins — белый список origin'ов для CORS (env ALLOWED_ORIGINS, через запятую).
 	// Пусто вне development => браузерные кросс-доменные запросы запрещены (безопасный дефолт).
 	AllowedOrigins []string
+
+	// TrustedProxies — IP/CIDR прокси, чьим X-Forwarded-For верим (env TRUSTED_PROXIES,
+	// через запятую). Пусто => приватные диапазоны (Railway/докер-сеть), см. router.
+	TrustedProxies []string
 }
 
 func Load() Config {
@@ -45,6 +49,7 @@ func Load() Config {
 		ManagerChatID:    strings.TrimSpace(getEnv("MANAGER_CHAT_ID", "")),
 
 		AllowedOrigins: getEnvList("ALLOWED_ORIGINS"),
+		TrustedProxies: getEnvList("TRUSTED_PROXIES"),
 	}
 }
 

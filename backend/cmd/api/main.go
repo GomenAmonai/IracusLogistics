@@ -79,7 +79,7 @@ func main() {
 	})
 
 	isDev := cfg.AppEnv == "development"
-	router := apphttp.NewRouter(apphttp.RouterDeps{
+	router, err := apphttp.NewRouter(apphttp.RouterDeps{
 		DB:              gdb,
 		LeadService:     leadService,
 		AuthService:     authService,
@@ -92,7 +92,12 @@ func main() {
 		// В dev без явного списка отдаём «*» для удобства; вне dev — строго белый список.
 		AllowAnyOrigin: isDev && len(cfg.AllowedOrigins) == 0,
 		ReleaseMode:    !isDev,
+		TrustedProxies: cfg.TrustedProxies,
 	})
+	if err != nil {
+		logger.Error("init router", "error", err)
+		os.Exit(1)
+	}
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,9 +27,22 @@ type RouterDeps struct {
 	AllowedOrigins []string
 	AllowAnyOrigin bool
 	ReleaseMode    bool
+
+	// TrustedProxies — IP/CIDR прокси, чьим X-Forwarded-For верит ClientIP (а значит и
+	// rate-limit). Пусто => приватные диапазоны: на Railway/в докере до контейнера
+	// дотягивается только платформенный балансировщик, а публичный клиент с приватного
+	// адреса прийти не может, подделать заголовок снаружи нельзя (техдолг #20).
+	TrustedProxies []string
 }
 
-func NewRouter(deps RouterDeps) *gin.Engine {
+// defaultTrustedProxies — приватные сети (RFC1918), CGNAT (Railway) и loopback.
+var defaultTrustedProxies = []string{
+	"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "127.0.0.1", "::1",
+}
+
+// NewRouter собирает роутер. Ошибка возможна только на битом TRUSTED_PROXIES — это
+// ошибка конфигурации, по ней процесс должен упасть на старте (fail-fast, как Validate).
+func NewRouter(deps RouterDeps) (*gin.Engine, error) {
 	if deps.ReleaseMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -36,6 +50,14 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(corsMiddleware(deps.AllowedOrigins, deps.AllowAnyOrigin))
+
+	trusted := deps.TrustedProxies
+	if len(trusted) == 0 {
+		trusted = defaultTrustedProxies
+	}
+	if err := router.SetTrustedProxies(trusted); err != nil {
+		return nil, fmt.Errorf("router: set trusted proxies: %w", err)
+	}
 
 	health := handlers.NewHealthHandler(deps.DB)
 	lead := handlers.NewLeadHandler(deps.LeadService)
@@ -88,7 +110,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		}
 	}
 
-	return router
+	return router, nil
 }
 
 // corsMiddleware отдаёт CORS-заголовки. allowAny (только dev) разрешает любой origin через «*».
