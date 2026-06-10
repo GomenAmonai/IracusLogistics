@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 
 const METRICS = [
   { value: '18–28', unit: 'дней транзит авто' },
-  { value: '100%', unit: 'грузов с трекингом' },
+  { value: '9 лет', unit: 'на рынке КНР → РФ' },
   { value: '2 ч', unit: 'среднее время ответа' },
 ]
 
@@ -112,12 +112,15 @@ export function Hero() {
 
         {/* Три способа доставки — стеклянные карточки, мост в светлый функциональный низ */}
         <ul className="mt-12 grid gap-3 sm:grid-cols-3 sm:gap-4">
-          {LANES.map((lane) => (
+          {LANES.map((lane, index) => (
             <li
               key={lane.title}
-              className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md"
+              className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md transition-colors duration-200 hover:border-amber/40"
             >
-              <h2 className="font-display text-lg font-bold text-white">{lane.title}</h2>
+              <span className="terminal text-xs font-semibold text-amber/80">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <h2 className="mt-2.5 font-display text-lg font-bold text-white">{lane.title}</h2>
               <p className="mt-2 text-sm leading-relaxed text-white/65">{lane.note}</p>
             </li>
           ))}

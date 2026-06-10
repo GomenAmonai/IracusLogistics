@@ -50,20 +50,25 @@ export function Services() {
       title="Полный цикл от поставщика до вашего склада"
       intro="Берём на себя то, на чём импортёр обычно теряет деньги и время: выкуп, сборку партии, таможню и доставку до двери."
     >
-      {/* Услуги — мягкие скруглённые карточки: номер позиции как терминал-табло */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Услуги — редакционный нумерованный список с разделителями: номер-табло,
+          заголовок и описание в три колонки. Контраст к карточным блокам страницы. */}
+      <div className="border-y border-line">
         {SERVICES.map((service, index) => (
           <article
             key={service.title}
-            className="rounded-2xl border border-line bg-surface p-6 shadow-card transition-shadow duration-200 hover:shadow-soft"
+            className={`group grid gap-2 py-7 md:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.3fr)] md:items-baseline md:gap-8 ${
+              index > 0 ? 'border-t border-line-soft' : ''
+            }`}
           >
-            <span className="terminal text-sm font-semibold">
+            <span className="terminal text-sm font-semibold text-accent">
               {String(index + 1).padStart(2, '0')}
             </span>
-            <h3 className="mt-4 font-display text-lg font-bold tracking-[-0.01em] text-ink">
+            <h3 className="font-display text-xl font-extrabold leading-snug tracking-[-0.02em] text-ink transition-transform duration-200 group-hover:translate-x-1 md:text-2xl">
               {service.title}
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            {/* NOTE: не использовать класс text-base — токен --color-base перехватывает
+                его как цвет (текст красится в цвет фона). Размер задаём явно. */}
+            <p className="text-sm leading-relaxed text-ink-soft sm:text-[1rem]">
               {service.text}
             </p>
           </article>

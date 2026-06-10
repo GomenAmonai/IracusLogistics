@@ -7,8 +7,8 @@ type Stat = {
   label: string
 }
 
+// «9 лет» живёт в метриках hero — здесь без дублей.
 const STATS: Stat[] = [
-  { target: 9, suffix: '', decimals: 0, label: 'лет на рынке КНР → РФ' },
   { target: 640, suffix: '', decimals: 0, label: 'тонн груза в месяц' },
   { target: 22, suffix: '', decimals: 0, label: 'дней средний транзит' },
   { target: 100, suffix: '%', decimals: 0, label: 'грузов с трекингом' },
@@ -18,8 +18,8 @@ const MODES = ['Авто', 'ЖД', 'Авиа', 'Море']
 
 function StatCell({ stat }: { stat: Stat }) {
   return (
-    <div className="flex flex-col items-center px-4 py-7 text-center sm:px-5">
-      <span className="terminal text-2xl font-semibold sm:text-3xl">
+    <div className="flex flex-col items-center px-4 py-8 text-center sm:px-5">
+      <span className="terminal text-3xl font-semibold sm:text-4xl">
         {stat.target.toFixed(stat.decimals)}
         {stat.suffix}
       </span>
@@ -41,7 +41,7 @@ export function Kpi() {
     >
       <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8">
         {/* Воздушный ряд показателей: мягкая surface-карточка, делители-линии вместо острых рамок */}
-        <dl className="grid grid-cols-2 rounded-2xl border border-line bg-surface shadow-card md:grid-cols-4 md:divide-x md:divide-line-soft [&>:nth-child(-n+2)]:border-b [&>:nth-child(-n+2)]:border-line-soft md:[&>:nth-child(-n+2)]:border-b-0 [&>:nth-child(2n)]:border-l [&>:nth-child(2n)]:border-line-soft md:[&>:nth-child(2n)]:border-l-0">
+        <dl className="grid rounded-2xl border border-line bg-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-line-soft max-sm:divide-y max-sm:divide-line-soft">
           {STATS.map((stat) => (
             <div key={stat.label}>
               <dt className="sr-only">{stat.label}</dt>
