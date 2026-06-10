@@ -42,7 +42,7 @@ backend/
     token/         # выпуск/разбор JWT с ролью (manager | client)
     telegram/      # проверка подписи Telegram initData (HMAC)
     bot/           # Telegram-бот (команды + уведомления)
-  migrations/      # SQL-миграции (схема v8)
+  migrations/      # SQL-миграции (схема v9)
 frontend/
   index.html  + src/                # лендинг
   webapp.html + src/webapp/         # Telegram Mini App
@@ -64,7 +64,7 @@ frontend/
 docker compose up -d postgres        # Postgres на :5433
 
 cd backend
-go run ./cmd/migrate up              # применить миграции (до v8)
+go run ./cmd/migrate up              # применить миграции (до v9)
 go run ./cmd/createmanager -email=admin@icaris.io -name="Админ" -password=secret
 go run ./cmd/api                     # http://localhost:8080 (без TELEGRAM_BOT_TOKEN бот в no-op)
 
@@ -78,40 +78,48 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
 
 ## Конфигурация (env)
 
-Переменные читаются из окружения (не из `.env` — автозагрузки нет). Шаблон — `backend/.env.example`.
+В development `backend/.env` автозагружается (godotenv); в проде переменные приходят из
+окружения платформы. Шаблон — `backend/.env.example`. Вне development `config.Validate()`
+останавливает старт при dev-дефолтах: пустой/дефолтный `JWT_SECRET` и `DATABASE_URL`,
+`sslmode=disable`, отсутствие токена/чата бота.
 
 | Переменная | Назначение | Дефолт |
 |---|---|---|
-| `DATABASE_URL` | строка подключения Postgres | `postgres://icaris:icaris@localhost:5433/icaris_logistic?sslmode=disable` |
-| `HTTP_ADDR` | адрес API | `:8080` |
+| `DATABASE_URL` | строка подключения Postgres | dev-Postgres на `:5433` |
+| `HTTP_ADDR` | адрес API (приоритетнее `PORT`) | `:8080` |
+| `PORT` | порт от облачной платформы (Railway/Render) | — |
 | `APP_ENV` | окружение | `development` |
 | `JWT_SECRET` | секрет подписи JWT | dev-дефолт (**в проде обязателен**) |
 | `JWT_TTL` | время жизни токена | `24h` |
 | `TELEGRAM_BOT_TOKEN` | токен бота; пусто → бот выключен | `""` |
 | `MANAGER_CHAT_ID` | чат для уведомлений менеджеру | `""` |
+| `ALLOWED_ORIGINS` | CORS-белый список origin'ов, через запятую | пусто (вне dev кросс-домен запрещён) |
 
-Фронтенд: `VITE_API_BASE` — базовый URL бэкенда (без пути, код добавляет `/api`). Локально не
-задаётся (относительный `/api` через прокси Vite).
+Фронтенд: `VITE_API_BASE` — базовый URL бэкенда (без пути, код добавляет `/api`). Запекается
+в бандл **на этапе сборки**. Локально не задаётся (относительный `/api` через прокси Vite).
 
-## Деплой
+## Деплой (staging)
 
-MVP-схема: **фронтенд на Vercel, backend локально через туннель** (ngrok), фронт ходит на
-backend по `VITE_API_BASE`.
+**Backend + Postgres — Railway, frontend — Vercel.** Бот живёт в том же процессе API
+(long polling), поэтому хост не должен засыпать — Railway с `sleepApplication: false`
+(Render free отпал: сервисы спят 15 минут и убивают polling).
 
-1. **Backend наружу.** Поднять API с токеном бота и пробросить порт:
-   ```bash
-   TELEGRAM_BOT_TOKEN=<token> MANAGER_CHAT_ID=<chat_id> go run ./cmd/api
-   ngrok http 8080                  # → публичный https://<...>.ngrok-free.app
-   ```
-2. **Frontend на Vercel.** Root Directory = `frontend` (Vite определится сам, output `dist`,
-   обе точки входа собираются). В переменных проекта задать `VITE_API_BASE` = ngrok-URL backend,
-   затем redeploy.
-3. **Mini App в боте.** Кнопку-меню бота навести на `https://<project>.vercel.app/webapp.html`
-   (через @BotFather → *Bot Settings → Menu Button*, либо Bot API `setChatMenuButton`).
+- **Railway:** сервис `icaris-api` + Postgres `icaris-db`. `DATABASE_URL` — reference-переменная
+  `${{icaris-db.DATABASE_URL}}`; плюс `APP_ENV=production`, `JWT_SECRET`, `TELEGRAM_BOT_TOKEN`,
+  `MANAGER_CHAT_ID`, `ALLOWED_ORIGINS=<vercel-домен>`. Healthcheck — `/api/health`.
+  Билдер RAILPACK собирает только `cmd/api`, поэтому **миграции гоняются с локальной машины**
+  по публичному URL БД: `DATABASE_URL='<public url>' go run ./cmd/migrate up`.
+- **Vercel:** проект с Root Directory = `frontend`, обе точки входа собираются. В переменных
+  проекта (Production+Preview) задан `VITE_API_BASE` = URL Railway-API — он запекается в бандл
+  при сборке; после смены значения нужен redeploy без кэша.
+- **Mini App в боте:** кнопка-меню → `https://<project>.vercel.app/webapp.html`
+  (@BotFather → *Bot Settings → Menu Button*). Именно страница WebApp, не корень и не API.
+  Telegram кэширует Mini App — после деплоя бандла иногда нужно чистить кэш Telegram.
 
-> Бесплатный ngrok-URL меняется при перезапуске — тогда обновить `VITE_API_BASE` и сделать
-> redeploy. Постоянный хостинг backend (+ managed Postgres, webhook вместо long polling) —
-> следующий шаг, см. `docs/tech-debt.md`.
+> Не запускать второй экземпляр API с тем же токеном бота (локально + облако): Telegram
+> отдаёт 409 на конкурирующий long polling. Локально — без `TELEGRAM_BOT_TOKEN`.
+> Следующий шаг по инфре — webhook вместо polling и outbox, см. `docs/tech-debt.md`.
+> `render.yaml` оставлен как запасной блюпринт (на free-плане Render не годится).
 
 ## API
 

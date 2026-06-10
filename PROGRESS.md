@@ -208,3 +208,38 @@ ReleaseMode).
 
 **Открытые вопросы (на ратификацию, до кода):** полосы карго/белый/выкуп (3 потока vs метка);
 партнёр Гуанчжоу (актор vs вне системы); каналы платежей (конкретный список значений).
+
+---
+
+### 2026-06-09/10 — Staging-деплой: Railway (backend+БД) + Vercel (frontend)
+
+**Сделано:**
+- **Backend на Railway** (проект «helpful-art», trial $5/30д): сервис `icaris-api` →
+  `https://icaris-api-production-7695.up.railway.app` (health 200, `database: ok`),
+  Postgres `icaris-db`, схема прогнана до **v9** с локальной машины по публичному URL БД
+  (билдер RAILPACK игнорирует Dockerfile — бинаря `migrate` в образе нет).
+  `sleepApplication: false` — бот (long polling) живёт. Render брошен: free-план спит и
+  отвергает `preDeployCommand` (`b5c6c96`).
+- **Фикс в коде** (`10d5a8c`): `strings.TrimSpace` для `TELEGRAM_BOT_TOKEN`/`MANAGER_CHAT_ID`
+  в config — хвостовой `\n` из дашборда Railway ломал `strconv.ParseInt` на старте (crash-loop).
+- **Frontend на Vercel**: ловушка двух почти одинаковых проектов — деплой шёл на орфан
+  `icaris-logistics`, а бот/CORS смотрят на канонический **`iracus-logistics`**. Исправлено:
+  `VITE_API_BASE` (= Railway URL) поставлен на iracus через REST API (`vercel env add` в CLI
+  54.9 молча пишет пустые значения), репо перелинкован, локальная сборка + `vercel deploy
+  --prebuilt --prod`. Живой бандл на `iracus-logistics.vercel.app` содержит Railway-URL.
+- CORS-preflight с Vercel-домена → 204 + allow-origin; `/api/app/auth/telegram` отвечает
+  честным 401 на пустой initData. Кнопка Mini App в BotFather →
+  `https://iracus-logistics.vercel.app/webapp.html`.
+- README переписан под актуальность: схема v9, env-таблица (`PORT`, `ALLOWED_ORIGINS`,
+  автозагрузка `.env` в dev), секция деплоя ngrok → Railway+Vercel.
+- Деталь топологии и ловушек — память `deploy-topology`.
+
+**Открытое / хвосты:**
+- **Проверка WebApp из Telegram самим Hiki** — серверная часть верифицирована, клиентская нет
+  (если 404 — почистить кэш Telegram; если 401 — следующий этап отладки initData).
+- Ротация засвеченных секретов до реальных клиентов: токен бота (@BotFather `/revoke`) и пароль
+  БД (Railway rotate). Удалить орфан-проект `icaris-logistics` на Vercel.
+- Railway trial $5/30д → потом решение о Hobby ($5/мес).
+
+**Следующий шаг:** не изменился — **Фаза B: модель платежей, пишет Hiki** с менторством
+(см. запись 2026-06-09). После проверки WebApp в Telegram staging считается рабочим.
