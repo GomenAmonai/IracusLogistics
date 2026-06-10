@@ -1,5 +1,5 @@
 import { formatDate } from '../lib/format'
-import type { Shipment } from '../lib/types'
+import { LANE_LABELS, type Shipment } from '../lib/types'
 import { StatusBadge } from './StatusBadge'
 
 type ShipmentCardProps = {
@@ -21,6 +21,9 @@ export function ShipmentCard({ shipment, onOpen }: ShipmentCardProps) {
         <StatusBadge status={shipment.status} />
       </div>
       {route && <p className="text-sm text-ink-soft">{route}</p>}
+      <span className="self-start rounded-full bg-surface-soft px-2.5 py-1 text-xs font-semibold text-ink-soft">
+        {LANE_LABELS[shipment.lane] ?? shipment.lane}
+      </span>
       <p className="terminal text-xs text-ink-soft">обновлён {formatDate(shipment.updated_at)}</p>
     </button>
   )

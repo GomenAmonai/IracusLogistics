@@ -4,10 +4,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
-// Две точки входа: index.html — лендинг, webapp.html — Telegram Mini App. Это «отдельные
-// приложения» (свой HTML, свой React-root, без общего роутинга), но дизайн-система общая —
-// обе тянут src/index.css. Прокси /api → Go API на :8080: фронт ходит на относительный
-// /api, vite проксирует, без CORS-плясок локально.
+// Три точки входа: index.html — лендинг, webapp.html — Telegram Mini App, manager.html —
+// панель менеджера. Это «отдельные приложения» (свой HTML, свой React-root, без общего
+// роутинга), но дизайн-система общая — все тянут src/index.css. Прокси /api → Go API на
+// :8080: фронт ходит на относительный /api, vite проксирует, без CORS-плясок локально.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         webapp: resolve(__dirname, 'webapp.html'),
+        manager: resolve(__dirname, 'manager.html'),
       },
     },
   },

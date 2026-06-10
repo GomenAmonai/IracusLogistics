@@ -12,9 +12,12 @@ export type ShipmentStatus =
   | 'delivered'
   | 'cancelled'
 
+export type Lane = 'cargo' | 'white' | 'buyout'
+
 export type Shipment = {
   id: string
   tracking_key: string
+  lane: Lane
   status: ShipmentStatus
   status_comment: string
   from_city: string
@@ -52,6 +55,12 @@ export type Client = {
   id: string
   name: string
   username: string
+}
+
+export const LANE_LABELS: Record<Lane, string> = {
+  cargo: 'Карго',
+  white: 'Белый импорт',
+  buyout: 'Выкуп',
 }
 
 export const STATUS_LABELS: Record<ShipmentStatus, string> = {

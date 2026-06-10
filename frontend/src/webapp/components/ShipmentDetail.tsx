@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { ApiError, getShipment } from '../lib/api'
 import { formatDate, formatMoney, formatVolume, formatWeight } from '../lib/format'
-import type { ShipmentDetail as ShipmentDetailData } from '../lib/types'
+import { LANE_LABELS, type ShipmentDetail as ShipmentDetailData } from '../lib/types'
 import { Chat } from './Chat'
 import { StatusBadge } from './StatusBadge'
 import { StatusTimeline } from './StatusTimeline'
@@ -15,6 +15,7 @@ function facts(detail: ShipmentDetailData): Fact[] {
   const route = [shipment.from_city, shipment.to_city].filter(Boolean).join(' → ')
   const entries: Array<[string, string | null]> = [
     ['Маршрут', route || null],
+    ['Полоса', LANE_LABELS[shipment.lane] ?? shipment.lane],
     ['Вес', formatWeight(shipment.weight)],
     ['Объём', formatVolume(shipment.volume)],
     ['Стоимость', formatMoney(shipment.price, shipment.currency)],
