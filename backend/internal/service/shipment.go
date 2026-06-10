@@ -68,6 +68,7 @@ func NewShipmentService(store ShipmentStore, clients ClientReader, notifier Clie
 // должен указывать на существующего клиента; остальное опционально и уточняется по ходу.
 type CreateShipmentInput struct {
 	ClientID   uuid.UUID           `json:"client_id"`
+	Lane       domain.Lane         `json:"lane"`
 	Weight     decimal.NullDecimal `json:"weight"`
 	Volume     decimal.NullDecimal `json:"volume"`
 	FromCity   string              `json:"from_city"`
@@ -93,6 +94,15 @@ func (s *ShipmentService) Create(ctx context.Context, managerID uuid.UUID, input
 		currency = "USD"
 	}
 
+	// Полоса по умолчанию — карго (исторически основной режим); явная, но неизвестная → 400.
+	lane := input.Lane
+	if lane == "" {
+		lane = domain.LaneCargo
+	}
+	if !lane.IsValid() {
+		return nil, fmt.Errorf("%w: unknown lane %q", ErrValidation, lane)
+	}
+
 	key, err := s.generateTrackingKey(ctx)
 	if err != nil {
 		return nil, err
@@ -102,6 +112,7 @@ func (s *ShipmentService) Create(ctx context.Context, managerID uuid.UUID, input
 		ClientID:      input.ClientID,
 		ManagerID:     managerID,
 		TrackingKey:   key,
+		Lane:          lane,
 		Status:        domain.ShipmentStatusPending,
 		StatusComment: input.StatusNote,
 		Weight:        input.Weight,

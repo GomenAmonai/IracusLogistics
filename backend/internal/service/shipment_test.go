@@ -155,3 +155,45 @@ func TestShipmentService_UpdateStatusReturnsUpdatedStatus(t *testing.T) {
 		t.Errorf("expected status in_transit, got %q", updated.Status)
 	}
 }
+
+func TestShipmentService_CreateDefaultsLaneToCargo(t *testing.T) {
+	clientID := uuid.New()
+	clients := &fakeClientReader{client: &domain.Client{ID: clientID}}
+	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil, nil)
+
+	shipment, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{ClientID: clientID})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	if shipment.Lane != domain.LaneCargo {
+		t.Errorf("expected default lane cargo, got %q", shipment.Lane)
+	}
+}
+
+func TestShipmentService_CreateRejectsUnknownLane(t *testing.T) {
+	clientID := uuid.New()
+	clients := &fakeClientReader{client: &domain.Client{ID: clientID}}
+	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil, nil)
+
+	_, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{ClientID: clientID, Lane: "grey"})
+
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected ErrValidation for unknown lane, got %v", err)
+	}
+}
+
+func TestShipmentService_CreateKeepsExplicitLane(t *testing.T) {
+	clientID := uuid.New()
+	clients := &fakeClientReader{client: &domain.Client{ID: clientID}}
+	svc := service.NewShipmentService(&fakeShipmentStore{}, clients, nil, nil)
+
+	shipment, err := svc.Create(context.Background(), uuid.New(), service.CreateShipmentInput{ClientID: clientID, Lane: domain.LaneWhite})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	if shipment.Lane != domain.LaneWhite {
+		t.Errorf("expected lane white, got %q", shipment.Lane)
+	}
+}

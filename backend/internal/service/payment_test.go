@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"icaris-logistic/backend/internal/domain"
+	"icaris-logistic/backend/internal/service"
 )
 
 type fakePaymentStore struct {
@@ -49,17 +50,17 @@ func (f *fakeShipmentReader) GetByID(_ context.Context, _ uuid.UUID) (*domain.Sh
 	return f.shipment, nil
 }
 
-func validPaymentInput() CreatePaymentInput {
-	return CreatePaymentInput{
+func validPaymentInput() service.CreatePaymentInput {
+	return service.CreatePaymentInput{
 		Amount:  decimal.NewFromInt(100),
 		Channel: domain.PaymentChannelCash,
 	}
 }
 
-func paymentServiceWithShipment() (*PaymentService, *fakePaymentStore) {
+func paymentServiceWithShipment() (*service.PaymentService, *fakePaymentStore) {
 	store := &fakePaymentStore{}
 	shipments := &fakeShipmentReader{shipment: &domain.Shipment{ID: uuid.New(), Currency: "USD"}}
-	return NewPaymentService(store, shipments), store
+	return service.NewPaymentService(store, shipments), store
 }
 
 func TestPaymentServiceCreateRejectsZeroAmount(t *testing.T) {
@@ -69,8 +70,8 @@ func TestPaymentServiceCreateRejectsZeroAmount(t *testing.T) {
 
 	_, err := svc.Create(context.Background(), uuid.New(), uuid.New(), input)
 
-	if !errors.Is(err, ErrValidation) {
-		t.Errorf("expected ErrValidation for zero amount, got %v", err)
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected service.ErrValidation for zero amount, got %v", err)
 	}
 }
 
@@ -81,8 +82,8 @@ func TestPaymentServiceCreateRejectsNegativeAmount(t *testing.T) {
 
 	_, err := svc.Create(context.Background(), uuid.New(), uuid.New(), input)
 
-	if !errors.Is(err, ErrValidation) {
-		t.Errorf("expected ErrValidation for negative amount, got %v", err)
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected service.ErrValidation for negative amount, got %v", err)
 	}
 }
 
@@ -93,8 +94,8 @@ func TestPaymentServiceCreateRejectsUnknownChannel(t *testing.T) {
 
 	_, err := svc.Create(context.Background(), uuid.New(), uuid.New(), input)
 
-	if !errors.Is(err, ErrValidation) {
-		t.Errorf("expected ErrValidation for unknown channel, got %v", err)
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected service.ErrValidation for unknown channel, got %v", err)
 	}
 }
 
@@ -105,13 +106,13 @@ func TestPaymentServiceCreateRejectsUnknownStatus(t *testing.T) {
 
 	_, err := svc.Create(context.Background(), uuid.New(), uuid.New(), input)
 
-	if !errors.Is(err, ErrValidation) {
-		t.Errorf("expected ErrValidation for unknown status, got %v", err)
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected service.ErrValidation for unknown status, got %v", err)
 	}
 }
 
 func TestPaymentServiceCreateUnknownShipmentReturnsNotFound(t *testing.T) {
-	svc := NewPaymentService(&fakePaymentStore{}, &fakeShipmentReader{})
+	svc := service.NewPaymentService(&fakePaymentStore{}, &fakeShipmentReader{})
 
 	_, err := svc.Create(context.Background(), uuid.New(), uuid.New(), validPaymentInput())
 
@@ -165,13 +166,13 @@ func TestPaymentServiceCreateRejectsBadCurrencyLength(t *testing.T) {
 
 	_, err := svc.Create(context.Background(), uuid.New(), uuid.New(), input)
 
-	if !errors.Is(err, ErrValidation) {
-		t.Errorf("expected ErrValidation for 4-letter currency, got %v", err)
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected service.ErrValidation for 4-letter currency, got %v", err)
 	}
 }
 
 func TestPaymentServiceListUnknownShipmentReturnsNotFound(t *testing.T) {
-	svc := NewPaymentService(&fakePaymentStore{}, &fakeShipmentReader{})
+	svc := service.NewPaymentService(&fakePaymentStore{}, &fakeShipmentReader{})
 
 	_, err := svc.ListByShipment(context.Background(), uuid.New())
 
@@ -185,14 +186,14 @@ func TestPaymentServiceUpdateStatusRejectsUnknownStatus(t *testing.T) {
 
 	_, err := svc.UpdateStatus(context.Background(), uuid.New(), uuid.New(), "maybe")
 
-	if !errors.Is(err, ErrValidation) {
-		t.Errorf("expected ErrValidation for unknown status, got %v", err)
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected service.ErrValidation for unknown status, got %v", err)
 	}
 }
 
 func TestPaymentServiceUpdateStatusForeignShipmentReturnsNotFound(t *testing.T) {
 	store := &fakePaymentStore{payment: &domain.Payment{ID: uuid.New(), ShipmentID: uuid.New()}}
-	svc := NewPaymentService(store, &fakeShipmentReader{})
+	svc := service.NewPaymentService(store, &fakeShipmentReader{})
 
 	_, err := svc.UpdateStatus(context.Background(), uuid.New(), store.payment.ID, domain.PaymentStatusConfirmed)
 
@@ -204,7 +205,7 @@ func TestPaymentServiceUpdateStatusForeignShipmentReturnsNotFound(t *testing.T) 
 func TestPaymentServiceUpdateStatusUpdatesMatchingPayment(t *testing.T) {
 	shipmentID := uuid.New()
 	store := &fakePaymentStore{payment: &domain.Payment{ID: uuid.New(), ShipmentID: shipmentID}}
-	svc := NewPaymentService(store, &fakeShipmentReader{})
+	svc := service.NewPaymentService(store, &fakeShipmentReader{})
 
 	updated, err := svc.UpdateStatus(context.Background(), shipmentID, store.payment.ID, domain.PaymentStatusConfirmed)
 	if err != nil {

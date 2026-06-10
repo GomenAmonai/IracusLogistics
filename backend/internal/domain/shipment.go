@@ -14,6 +14,7 @@ type Shipment struct {
 	ClientID      uuid.UUID           `gorm:"type:uuid;not null;index" json:"client_id"`
 	ManagerID     uuid.UUID           `gorm:"type:uuid;not null;index" json:"manager_id"`
 	TrackingKey   string              `gorm:"type:varchar(64);uniqueIndex;not null" json:"tracking_key"`
+	Lane          Lane                `gorm:"type:varchar(10);not null;default:cargo" json:"lane"`
 	Status        ShipmentStatus      `gorm:"type:varchar(20);not null;default:pending" json:"status"`
 	StatusComment string              `gorm:"type:text" json:"status_comment"`
 	Weight        decimal.NullDecimal `gorm:"type:numeric" json:"weight"`
@@ -26,6 +27,28 @@ type Shipment struct {
 	DeliveredAt   *time.Time          `json:"delivered_at"`
 	CreatedAt     time.Time           `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt     time.Time           `gorm:"not null;default:now()" json:"updated_at"`
+}
+
+// Lane — полоса доставки: каким режимом везём груз. Ратифицировано Hiki 2026-06-10 как
+// метка на грузе (не три раздельных потока): процессы полос в MVP совпадают, различия —
+// в документах и цене; раздельные статусные машины отложены до реальной необходимости.
+type Lane string
+
+const (
+	LaneCargo  Lane = "cargo"  // карго: быстрая доставка через Казахстан/Азербайджан
+	LaneWhite  Lane = "white"  // белый импорт: с документами, НДС, Честным знаком
+	LaneBuyout Lane = "buyout" // выкуп: 找货, оплата поставщику, проверка на складе в КНР
+)
+
+// IsValid сообщает, входит ли полоса в допустимый набор (CHECK в БД дублирует на своём
+// уровне; сервис проверяет раньше, чтобы вернуть 400, а не 500).
+func (l Lane) IsValid() bool {
+	switch l {
+	case LaneCargo, LaneWhite, LaneBuyout:
+		return true
+	default:
+		return false
+	}
 }
 
 type ShipmentStatus string
