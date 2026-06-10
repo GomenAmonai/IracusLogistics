@@ -68,6 +68,11 @@ func (b *Bot) dispatchDue(ctx context.Context) {
 		return
 	}
 
+	// Пометки идут без отмены: shutdown между отправкой и MarkSent отменил бы запись —
+	// и уже доставленное сообщение ушло бы дублем на следующем старте. Дренаж bg.Wait
+	// дождётся завершения текущего батча, пул БД закрывается позже (defer в main).
+	markCtx := context.WithoutCancel(ctx)
+
 	for _, n := range batch {
 		if ctx.Err() != nil {
 			return
@@ -77,7 +82,7 @@ func (b *Bot) dispatchDue(ctx context.Context) {
 			attempt := n.Attempts + 1
 			final := attempt >= outboxMaxAttempts
 			next := time.Now().Add(outboxBackoff(attempt))
-			if markErr := b.outbox.MarkFailed(ctx, n.ID, err.Error(), next, final); markErr != nil {
+			if markErr := b.outbox.MarkFailed(markCtx, n.ID, err.Error(), next, final); markErr != nil {
 				slog.Error("outbox: mark failed", "notification_id", n.ID, "error", markErr)
 			}
 			if final {
@@ -86,7 +91,7 @@ func (b *Bot) dispatchDue(ctx context.Context) {
 			continue
 		}
 
-		if err := b.outbox.MarkSent(ctx, n.ID); err != nil {
+		if err := b.outbox.MarkSent(markCtx, n.ID); err != nil {
 			// Сообщение ушло, а пометка не записалась — на следующем тике уйдёт дубль.
 			// At-least-once: дубль уведомления приемлемее потери.
 			slog.Error("outbox: mark sent", "notification_id", n.ID, "error", err)
