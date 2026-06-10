@@ -18,6 +18,7 @@ type RouterDeps struct {
 	ClientService   *service.ClientService
 	ShipmentService *service.ShipmentService
 	MessageService  *service.MessageService
+	PaymentService  *service.PaymentService
 	JWTSecret       string
 
 	// AllowedOrigins — белый список CORS. AllowAnyOrigin (только dev) отдаёт «*» и игнорирует
@@ -43,6 +44,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	client := handlers.NewClientHandler(deps.ClientService)
 	shipment := handlers.NewShipmentHandler(deps.ShipmentService, deps.MessageService)
 	appShipment := handlers.NewAppShipmentHandler(deps.ShipmentService, deps.MessageService)
+	payment := handlers.NewPaymentHandler(deps.PaymentService)
 
 	api := router.Group("/api")
 	{
@@ -69,6 +71,10 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 			manager.PATCH("/shipments/:id/status", shipment.UpdateStatus)
 			manager.GET("/shipments/:id/messages", shipment.ListMessages)
 			manager.POST("/shipments/:id/messages", shipment.SendMessage)
+
+			manager.POST("/shipments/:id/payments", payment.Create)
+			manager.GET("/shipments/:id/payments", payment.List)
+			manager.PATCH("/shipments/:id/payments/:paymentID", payment.UpdateStatus)
 		}
 
 		// Клиентские ручки WebApp: валидный JWT с role=client.

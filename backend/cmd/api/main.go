@@ -54,6 +54,7 @@ func main() {
 	clientRepo := repository.NewClientRepository(gdb)
 	shipmentRepo := repository.NewShipmentRepository(gdb)
 	messageRepo := repository.NewMessageRepository(gdb)
+	paymentRepo := repository.NewPaymentRepository(gdb)
 
 	notifier, err := bot.New(cfg.TelegramBotToken, cfg.ManagerChatID)
 	if err != nil {
@@ -69,6 +70,7 @@ func main() {
 	clientService := service.NewClientService(clientRepo, cfg.TelegramBotToken, cfg.JWTSecret, cfg.JWTTTL)
 	shipmentService := service.NewShipmentService(shipmentRepo, clientRepo, notifier, bg)
 	messageService := service.NewMessageService(messageRepo, shipmentRepo, clientRepo, notifier, notifier, bg)
+	paymentService := service.NewPaymentService(paymentRepo, shipmentRepo)
 
 	// Бот принимает команды клиентов (/start, /status) в long polling, пока жив ctx. Через bg,
 	// чтобы при остановке дождаться завершения текущей команды (Run выходит по ctx.Done).
@@ -84,6 +86,7 @@ func main() {
 		ClientService:   clientService,
 		ShipmentService: shipmentService,
 		MessageService:  messageService,
+		PaymentService:  paymentService,
 		JWTSecret:       cfg.JWTSecret,
 		AllowedOrigins:  cfg.AllowedOrigins,
 		// В dev без явного списка отдаём «*» для удобства; вне dev — строго белый список.
