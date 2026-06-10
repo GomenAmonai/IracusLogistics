@@ -76,17 +76,27 @@ func main() {
 	messageService := service.NewMessageService(messageRepo, shipmentRepo, clientRepo, notifier, notifier, bg)
 	paymentService := service.NewPaymentService(paymentRepo, shipmentRepo)
 
-	// Бот принимает команды клиентов (/start, /status) в long polling, пока жив ctx. Через bg,
-	// чтобы при остановке дождаться завершения текущей команды (Run выходит по ctx.Done).
-	bg.Go(func() {
-		notifier.Run(ctx, bot.RunDeps{Registrar: clientService, Lister: shipmentService})
-	})
+	// Источник апдейтов бота: webhook (URL задан — апдейты приходят на HTTP-ручку) либо
+	// long polling в горутине. Поллинг через bg, чтобы при остановке дождаться завершения
+	// текущей команды (Run выходит по ctx.Done).
+	runDeps := bot.RunDeps{Registrar: clientService, Lister: shipmentService}
+	isWebhookMode := cfg.TelegramWebhookURL != ""
+	if isWebhookMode {
+		if err := notifier.StartWebhook(runDeps, cfg.TelegramWebhookURL, cfg.TelegramWebhookSecret); err != nil {
+			logger.Error("start webhook", "error", err)
+			os.Exit(1)
+		}
+	} else {
+		bg.Go(func() {
+			notifier.Run(ctx, runDeps)
+		})
+	}
 	bg.Go(func() {
 		notifier.RunOutbox(ctx)
 	})
 
 	isDev := cfg.AppEnv == "development"
-	router, err := apphttp.NewRouter(apphttp.RouterDeps{
+	routerDeps := apphttp.RouterDeps{
 		DB:              gdb,
 		LeadService:     leadService,
 		AuthService:     authService,
@@ -100,7 +110,12 @@ func main() {
 		AllowAnyOrigin: isDev && len(cfg.AllowedOrigins) == 0,
 		ReleaseMode:    !isDev,
 		TrustedProxies: cfg.TrustedProxies,
-	})
+	}
+	if isWebhookMode {
+		routerDeps.WebhookProcessor = notifier
+		routerDeps.WebhookSecret = cfg.TelegramWebhookSecret
+	}
+	router, err := apphttp.NewRouter(routerDeps)
 	if err != nil {
 		logger.Error("init router", "error", err)
 		os.Exit(1)

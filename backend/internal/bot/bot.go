@@ -28,6 +28,9 @@ type Bot struct {
 	disabled bool
 	// outbox — персистентная очередь уведомлений (см. UseOutbox); nil => прямая отправка.
 	outbox OutboxStore
+	// webhookDeps — зависимости обработки апдейтов в webhook-режиме (см. StartWebhook);
+	// nil => апдейты приходят через long polling (Run).
+	webhookDeps *RunDeps
 }
 
 // ClientRegistrar создаёт/находит клиента по его Telegram-личности (реализует
@@ -82,12 +85,18 @@ func New(token, chatID string) (*Bot, error) {
 }
 
 // Run запускает long polling и обрабатывает команды клиентов до отмены ctx. Блокирующий —
-// вызывается в отдельной горутине. В no-op режиме сразу возвращается.
-//
-// NOTE: MVP — long polling вместо webhook; см. docs/tech-debt.md
+// вызывается в отдельной горутине. В no-op режиме сразу возвращается. Альтернативный
+// источник апдейтов — webhook (StartWebhook + ProcessUpdateJSON), тогда Run не вызывается.
 func (b *Bot) Run(ctx context.Context, deps RunDeps) {
 	if b.disabled {
 		return
+	}
+
+	// Зарегистрированный ранее webhook блокирует getUpdates (Telegram отвечает 409),
+	// поэтому перед поллингом снимаем его. Ошибку только логируем: если webhook не был
+	// настроен, удалять нечего, а поллинг всё равно стартует.
+	if _, err := b.api.Request(tgbotapi.DeleteWebhookConfig{}); err != nil {
+		slog.Warn("bot: delete webhook before polling", "kind", fmt.Sprintf("%T", err))
 	}
 
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -100,16 +109,21 @@ func (b *Bot) Run(ctx context.Context, deps RunDeps) {
 			b.api.StopReceivingUpdates()
 			return
 		case update := <-updates:
-			if update.CallbackQuery != nil {
-				b.handleCallback(ctx, deps, update.CallbackQuery)
-				continue
-			}
-			if update.Message == nil || !update.Message.IsCommand() {
-				continue
-			}
-			b.handleCommand(ctx, deps, update.Message)
+			b.processUpdate(ctx, deps, update)
 		}
 	}
+}
+
+// processUpdate — обработка одного апдейта; общая для поллинга и webhook.
+func (b *Bot) processUpdate(ctx context.Context, deps RunDeps, update tgbotapi.Update) {
+	if update.CallbackQuery != nil {
+		b.handleCallback(ctx, deps, update.CallbackQuery)
+		return
+	}
+	if update.Message == nil || !update.Message.IsCommand() {
+		return
+	}
+	b.handleCommand(ctx, deps, update.Message)
 }
 
 func (b *Bot) handleCommand(ctx context.Context, deps RunDeps, msg *tgbotapi.Message) {

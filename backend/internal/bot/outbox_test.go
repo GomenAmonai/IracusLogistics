@@ -82,3 +82,28 @@ func TestOutboxBackoffIsCapped(t *testing.T) {
 		t.Errorf("expected capped backoff %v, got %v", outboxMaxBackoff, got)
 	}
 }
+
+func TestProcessUpdateJSONRejectsInvalidJSON(t *testing.T) {
+	b := &Bot{chatID: 1, webhookDeps: &RunDeps{}}
+
+	if err := b.ProcessUpdateJSON(context.Background(), []byte("not-json")); err == nil {
+		t.Error("expected error for unparseable update body")
+	}
+}
+
+func TestProcessUpdateJSONIgnoresUpdatesWithoutWebhookMode(t *testing.T) {
+	b := &Bot{chatID: 1}
+
+	if err := b.ProcessUpdateJSON(context.Background(), []byte(`{"update_id":1}`)); err != nil {
+		t.Errorf("expected update to be ignored without webhook mode, got %v", err)
+	}
+}
+
+func TestProcessUpdateJSONIgnoresNonCommandUpdate(t *testing.T) {
+	b := &Bot{chatID: 1, webhookDeps: &RunDeps{}}
+
+	// Апдейт без message/callback не должен трогать ни API (nil), ни deps (пустые).
+	if err := b.ProcessUpdateJSON(context.Background(), []byte(`{"update_id":7}`)); err != nil {
+		t.Errorf("expected non-command update to be a no-op, got %v", err)
+	}
+}

@@ -33,6 +33,11 @@ type RouterDeps struct {
 	// дотягивается только платформенный балансировщик, а публичный клиент с приватного
 	// адреса прийти не может, подделать заголовок снаружи нельзя (техдолг #20).
 	TrustedProxies []string
+
+	// WebhookProcessor + WebhookSecret включают приём Telegram-апдейтов по HTTP
+	// (webhook-режим бота). Оба заданы => регистрируется POST /api/telegram/webhook.
+	WebhookProcessor handlers.UpdateProcessor
+	WebhookSecret    string
 }
 
 // defaultTrustedProxies — приватные сети (RFC1918), CGNAT (Railway) и loopback.
@@ -76,6 +81,13 @@ func NewRouter(deps RouterDeps) (*gin.Engine, error) {
 		api.POST("/leads", middleware.RateLimit(1, 5), lead.Create)                     // форма с сайта, без авторизации
 		api.POST("/auth/login", middleware.RateLimit(1, 5), auth.Login)                 // менеджер: email + пароль
 		api.POST("/app/auth/telegram", middleware.RateLimit(1, 5), clientAuth.Telegram) // клиент: Telegram initData
+
+		// Webhook-ручка бота: без лимитера (весь легитимный трафик — Telegram, объём
+		// контролирует он), аутентификация — секретный заголовок внутри хендлера.
+		if deps.WebhookProcessor != nil && deps.WebhookSecret != "" {
+			webhook := handlers.NewTelegramWebhookHandler(deps.WebhookProcessor, deps.WebhookSecret)
+			api.POST("/telegram/webhook", webhook.Handle)
+		}
 
 		// Менеджерские ручки: валидный JWT с role=manager.
 		manager := api.Group("")

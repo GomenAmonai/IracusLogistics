@@ -24,6 +24,13 @@ type Config struct {
 	TelegramBotToken string
 	ManagerChatID    string
 
+	// TelegramWebhookURL — публичный HTTPS-URL ручки /api/telegram/webhook. Задан =>
+	// бот получает апдейты webhook'ом вместо long polling. Secret обязателен вместе с URL:
+	// Telegram шлёт его в заголовке X-Telegram-Bot-Api-Secret-Token, по нему ручка
+	// отличает Telegram от постороннего трафика.
+	TelegramWebhookURL    string
+	TelegramWebhookSecret string
+
 	// AllowedOrigins — белый список origin'ов для CORS (env ALLOWED_ORIGINS, через запятую).
 	// Пусто вне development => браузерные кросс-доменные запросы запрещены (безопасный дефолт).
 	AllowedOrigins []string
@@ -48,6 +55,9 @@ func Load() Config {
 		TelegramBotToken: strings.TrimSpace(getEnv("TELEGRAM_BOT_TOKEN", "")),
 		ManagerChatID:    strings.TrimSpace(getEnv("MANAGER_CHAT_ID", "")),
 
+		TelegramWebhookURL:    strings.TrimSpace(getEnv("TELEGRAM_WEBHOOK_URL", "")),
+		TelegramWebhookSecret: strings.TrimSpace(getEnv("TELEGRAM_WEBHOOK_SECRET", "")),
+
 		AllowedOrigins: getEnvList("ALLOWED_ORIGINS"),
 		TrustedProxies: getEnvList("TRUSTED_PROXIES"),
 	}
@@ -57,11 +67,22 @@ func Load() Config {
 // Возвращает все найденные проблемы разом (errors.Join), чтобы их чинили списком,
 // а не по одной перезапуском. В development дефолты допустимы намеренно.
 func (c Config) Validate() error {
-	if c.AppEnv == envDevelopment {
-		return nil
+	var errs []error
+
+	// Webhook — опциональная фича, но заданная наполовину конфигурация это ошибка в любом
+	// окружении: без секрета ручку откроет кто угодно, без https Telegram URL не примет.
+	if c.TelegramWebhookURL != "" {
+		if !strings.HasPrefix(c.TelegramWebhookURL, "https://") {
+			errs = append(errs, errors.New("TELEGRAM_WEBHOOK_URL must be an https URL"))
+		}
+		if c.TelegramWebhookSecret == "" {
+			errs = append(errs, errors.New("TELEGRAM_WEBHOOK_SECRET is required when TELEGRAM_WEBHOOK_URL is set"))
+		}
 	}
 
-	var errs []error
+	if c.AppEnv == envDevelopment {
+		return errors.Join(errs...)
+	}
 	if c.JWTSecret == "" || c.JWTSecret == devDefaultJWTSecret {
 		errs = append(errs, errors.New("JWT_SECRET must be set to a non-default value outside development"))
 	}

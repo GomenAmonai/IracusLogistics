@@ -64,3 +64,44 @@ func TestHTTPAddrFallsBackToPortWhenAddrUnset(t *testing.T) {
 		t.Fatalf("expected PORT to drive the listen address, got %q", got)
 	}
 }
+
+func TestValidateRejectsWebhookURLWithoutSecretEvenInDevelopment(t *testing.T) {
+	cfg := Config{
+		AppEnv:             envDevelopment,
+		JWTSecret:          devDefaultJWTSecret,
+		DatabaseURL:        devDefaultDatabaseURL,
+		TelegramWebhookURL: "https://api.example.com/api/telegram/webhook",
+	}
+
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("webhook URL without secret should be rejected in any environment")
+	}
+}
+
+func TestValidateRejectsNonHTTPSWebhookURL(t *testing.T) {
+	cfg := Config{
+		AppEnv:                envDevelopment,
+		JWTSecret:             devDefaultJWTSecret,
+		DatabaseURL:           devDefaultDatabaseURL,
+		TelegramWebhookURL:    "http://api.example.com/api/telegram/webhook",
+		TelegramWebhookSecret: "s3cret",
+	}
+
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("non-https webhook URL should be rejected")
+	}
+}
+
+func TestValidateAllowsCompleteWebhookConfigInDevelopment(t *testing.T) {
+	cfg := Config{
+		AppEnv:                envDevelopment,
+		JWTSecret:             devDefaultJWTSecret,
+		DatabaseURL:           devDefaultDatabaseURL,
+		TelegramWebhookURL:    "https://api.example.com/api/telegram/webhook",
+		TelegramWebhookSecret: "s3cret",
+	}
+
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("complete webhook config should pass in development, got: %v", err)
+	}
+}
