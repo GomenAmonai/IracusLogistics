@@ -100,15 +100,3 @@ export const STATUS_LABELS: Record<ShipmentStatus, string> = {
   delivered: 'Доставлен',
   cancelled: 'Отменён',
 }
-
-// Канонический порядок прохождения статусов — основа таймлайна-степпера. cancelled вне
-// потока (терминальный отказ), поэтому в степпер не входит.
-export const STATUS_FLOW: ShipmentStatus[] = [
-  'pending',
-  'picked_up',
-  'in_transit',
-  'customs_clear',
-  'in_warehouse',
-  'out_for_delivery',
-  'delivered',
-]

@@ -11,18 +11,19 @@ B2B-сервис экспедирования грузов **Китай → Ро
 
 - **Лендинг** — описание услуги, калькулятор диапазона цены, форма заявки → `Lead` в БД.
 - **Менеджер** — вход по email+паролю (JWT), CRUD лидов и грузов, смена статуса с историей,
-  чат с клиентом. Уведомление о новом лиде в Telegram.
+  чат с клиентом, платежи по грузу. Панель — `/manager.html`; уведомление о новом лиде в Telegram.
 - **Клиент** — авторизация через Telegram (бот `/start` или Mini App по `initData`),
-  быстрый `/status` в боте, уведомления о смене статуса.
-- **WebApp (Telegram Mini App)** — список грузов, детали + таймлайн истории статусов, чат с
-  менеджером.
+  быстрый `/status` в боте, уведомления о смене статуса и платежах.
+- **WebApp (Telegram Mini App)** — список грузов, детали + таймлайн истории статусов, платежи,
+  чат с менеджером.
 
 ## Стек
 
 - **Backend:** Go + Gin + GORM + PostgreSQL. Схема — SQL-миграции (не AutoMigrate).
-- **Frontend:** React + TypeScript + Vite + Tailwind v4. Две точки входа (лендинг + Mini App),
-  общая дизайн-система. Telegram WebApp SDK.
-- **Bot:** go-telegram-bot-api, long polling (`/start`, `/status` + исходящие уведомления).
+- **Frontend:** React + TypeScript + Vite + Tailwind v4. Три точки входа (лендинг + Mini App +
+  панель менеджера), общая дизайн-система. Telegram WebApp SDK.
+- **Bot:** go-telegram-bot-api, long polling или webhook (`TELEGRAM_WEBHOOK_*`); исходящие
+  уведомления через outbox с ретраями.
 - **Локально:** Docker Compose (Postgres).
 
 ## Архитектура
@@ -34,18 +35,19 @@ B2B-сервис экспедирования грузов **Китай → Ро
 backend/
   cmd/{api,migrate,createmanager}   # точки входа и CLI
   internal/
-    domain/        # сущности: Manager, Lead, Client, Shipment, Message, ShipmentStatusEvent
+    domain/        # сущности: Manager, Lead, Client, Shipment, Message, ShipmentStatusEvent, Payment, Notification
     repository/    # GORM-репозитории
-    service/       # бизнес-логика (Lead, Auth, Client, Shipment, Message)
+    service/       # бизнес-логика (Lead, Auth, Client, Shipment, Message, Payment)
     http/          # Gin-роутер и хендлеры
     middleware/    # JWT-проверка (RequireAuth / RequireClientAuth)
     token/         # выпуск/разбор JWT с ролью (manager | client)
     telegram/      # проверка подписи Telegram initData (HMAC)
     bot/           # Telegram-бот (команды + уведомления)
-  migrations/      # SQL-миграции (схема v9)
+  migrations/      # SQL-миграции (схема v12)
 frontend/
   index.html  + src/                # лендинг
   webapp.html + src/webapp/         # Telegram Mini App
+  manager.html + src/manager/       # панель менеджера
   src/index.css                     # общие дизайн-токены
 ```
 
@@ -64,13 +66,13 @@ frontend/
 docker compose up -d postgres        # Postgres на :5433
 
 cd backend
-go run ./cmd/migrate up              # применить миграции (до v9)
-go run ./cmd/createmanager -email=admin@icaris.io -name="Админ" -password=secret
+go run ./cmd/migrate up              # применить миграции (до v12)
+go run ./cmd/createmanager -email=manager@example.com -name="Имя" -password='<свой-пароль>'
 go run ./cmd/api                     # http://localhost:8080 (без TELEGRAM_BOT_TOKEN бот в no-op)
 
 cd ../frontend
 npm install
-npm run dev                          # :5173 — лендинг, /webapp.html — Mini App; /api → :8080
+npm run dev                          # :5173 — лендинг, /webapp.html — Mini App, /manager.html — панель; /api → :8080
 ```
 
 Без `TELEGRAM_BOT_TOKEN` бот и авторизация WebApp по `initData` выключены; для отладки UI
@@ -112,7 +114,7 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
   `MANAGER_CHAT_ID`, `ALLOWED_ORIGINS=<vercel-домен>`. Healthcheck — `/api/health`.
   Билдер RAILPACK собирает только `cmd/api`, поэтому **миграции гоняются с локальной машины**
   по публичному URL БД: `DATABASE_URL='<public url>' go run ./cmd/migrate up`.
-- **Vercel:** проект с Root Directory = `frontend`, обе точки входа собираются. В переменных
+- **Vercel:** проект с Root Directory = `frontend`, все три точки входа собираются. В переменных
   проекта (Production+Preview) задан `VITE_API_BASE` = URL Railway-API — он запекается в бандл
   при сборке; после смены значения нужен redeploy без кэша.
 - **Mini App в боте:** кнопка-меню → `https://<project>.vercel.app/webapp.html`
@@ -121,7 +123,8 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
 
 > Не запускать второй экземпляр API с тем же токеном бота (локально + облако): Telegram
 > отдаёт 409 на конкурирующий long polling. Локально — без `TELEGRAM_BOT_TOKEN`.
-> Следующий шаг по инфре — webhook вместо polling и outbox, см. `docs/tech-debt.md`.
+> Webhook-режим и outbox реализованы; на Railway webhook включается переменными
+> `TELEGRAM_WEBHOOK_*` (см. `docs/tech-debt.md` #22).
 > `render.yaml` оставлен как запасной блюпринт (на free-плане Render не годится).
 
 ## API
@@ -163,6 +166,7 @@ GET   /api/app/shipments              # только свои грузы
 GET   /api/app/shipments/{id}         # → { "shipment", "history": [...] }
 GET   /api/app/shipments/{id}/messages
 POST  /api/app/shipments/{id}/messages  # { "text" }
+GET   /api/app/shipments/{id}/payments  # платежи своего груза
 ```
 
 Статусы груза: `pending, picked_up, in_transit, customs_clear, in_warehouse,
@@ -179,7 +183,7 @@ out_for_delivery, delivered, cancelled`. Полосы: `cargo, white, buyout` (�
 
 ```bash
 cd backend && go test ./...   # репозиторий-тесты сами пропускаются без БД (CI без базы зелёный)
-cd frontend && npm run build  # tsc + сборка обеих точек входа
+cd frontend && npm run build  # tsc + сборка всех трёх точек входа
 ```
 
 ## Документы
