@@ -6,10 +6,10 @@ const REQUISITES = [
   { label: 'Адрес', value: 'Москва, ул. Складочная, 6с1, офис 412' },
 ]
 
+// Телефон/почта появятся с реальными после регистрации юрлица — фейковые не публикуем.
 const CONTACTS = [
-  { label: 'Телефон', value: '+7 495 120-44-18', href: 'tel:+74951204418' },
-  { label: 'Почта', value: 'cargo@icaris.ru', href: 'mailto:cargo@icaris.ru' },
-  { label: 'Telegram', value: '@IcarisLogBot', href: 'https://t.me/IcarisLogBot' },
+  { label: 'Менеджер', value: '@hikill8', href: 'https://t.me/hikill8' },
+  { label: 'Бот', value: '@IcarisLogBot', href: 'https://t.me/IcarisLogBot' },
 ]
 
 // Числовые реквизиты идут на терминал-чип; адрес/название — обычный текст.

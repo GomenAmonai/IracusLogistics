@@ -8,7 +8,9 @@ const NAV_LINKS = [
   { href: '#contacts', label: 'Контакты' },
 ]
 
-const PHONE = '+7 495 120-44-18'
+// Реальный телефон появится после регистрации юрлица — до тех пор контакт = Telegram менеджера.
+const MANAGER_TG = '@hikill8'
+const MANAGER_TG_URL = 'https://t.me/hikill8'
 
 export function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false)
@@ -72,12 +74,14 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           <a
-            href={`tel:${PHONE.replace(/[^+\d]/g, '')}`}
+            href={MANAGER_TG_URL}
+            target="_blank"
+            rel="noreferrer"
             className={`hidden font-mono text-sm transition-colors lg:block ${
               solid ? 'text-ink-soft hover:text-ink' : 'text-white/75 hover:text-white'
             }`}
           >
-            {PHONE}
+            {MANAGER_TG}
           </a>
           <a
             href="#lead"

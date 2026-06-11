@@ -147,7 +147,6 @@ func helpText() string {
 // managerContactText — контакты для кнопки «Менеджер».
 func managerContactText() string {
 	return "Связаться с менеджером:\n" +
-		"• Телефон: +7 495 120-44-18\n" +
-		"• Почта: cargo@icaris.ru\n\n" +
+		"• Telegram: @hikill8 — https://t.me/hikill8\n\n" +
 		"Вопрос по конкретному грузу удобнее задать в приложении — в чате по этому грузу."
 }
