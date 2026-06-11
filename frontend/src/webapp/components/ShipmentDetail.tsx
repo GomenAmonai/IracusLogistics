@@ -4,6 +4,7 @@ import { ApiError, getShipment } from '../lib/api'
 import { formatDate, formatMoney, formatVolume, formatWeight } from '../lib/format'
 import { LANE_LABELS, type ShipmentDetail as ShipmentDetailData } from '../lib/types'
 import { Chat } from './Chat'
+import { PaymentList } from './PaymentList'
 import { StatusBadge } from './StatusBadge'
 import { StatusTimeline } from './StatusTimeline'
 import { CenteredState, Spinner } from './ui'
@@ -90,6 +91,8 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         <h2 className="font-display text-base font-semibold text-ink">История статусов</h2>
         <StatusTimeline history={detail.history} />
       </section>
+
+      <PaymentList shipmentId={shipmentId} />
 
       <Chat shipmentId={shipmentId} />
     </div>

@@ -44,6 +44,20 @@ export type ShipmentDetail = {
   history: StatusEvent[]
 }
 
+export type PaymentChannel = 'bank_transfer' | 'card_sbp' | 'cash' | 'crypto'
+
+export type PaymentStatus = 'pending' | 'confirmed' | 'refunded'
+
+export type Payment = {
+  id: string
+  amount: string
+  currency: string
+  channel: PaymentChannel
+  status: PaymentStatus
+  comment: string
+  created_at: string
+}
+
 export type Message = {
   id: string
   text: string
@@ -61,6 +75,19 @@ export const LANE_LABELS: Record<Lane, string> = {
   cargo: 'Карго',
   white: 'Белый импорт',
   buyout: 'Выкуп',
+}
+
+export const PAYMENT_CHANNEL_LABELS: Record<PaymentChannel, string> = {
+  bank_transfer: 'Безнал по счёту',
+  card_sbp: 'Карта / СБП',
+  cash: 'Наличные',
+  crypto: 'Криптовалюта',
+}
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: 'Ожидает оплаты',
+  confirmed: 'Получен',
+  refunded: 'Возвращён',
 }
 
 export const STATUS_LABELS: Record<ShipmentStatus, string> = {

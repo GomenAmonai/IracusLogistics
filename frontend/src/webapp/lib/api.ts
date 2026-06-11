@@ -1,4 +1,4 @@
-import type { Client, Message, Shipment, ShipmentDetail } from './types'
+import type { Client, Message, Payment, Shipment, ShipmentDetail } from './types'
 
 // Клиентский API WebApp. Bearer-токен (client-JWT) держим в памяти модуля: его выдаёт
 // /app/auth/telegram, дальше им подписываем каждый запрос.
@@ -78,6 +78,10 @@ export async function listShipments(): Promise<Shipment[]> {
 
 export async function getShipment(id: string): Promise<ShipmentDetail> {
   return request(`/app/shipments/${id}`)
+}
+
+export async function listPayments(shipmentId: string): Promise<Payment[]> {
+  return request(`/app/shipments/${shipmentId}/payments`)
 }
 
 export async function listMessages(shipmentId: string): Promise<Message[]> {
