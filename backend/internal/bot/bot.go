@@ -281,7 +281,7 @@ func (b *Bot) reply(chatID int64, text string) {
 
 // landingURL — публичный сайт, на который ведёт кнопка меню. Mini App открывается отдельной
 // кнопкой-меню Telegram (setChatMenuButton), web_app-кнопки в inline нет в v5.5.1.
-const landingURL = "https://icaris-logistics.vercel.app"
+const landingURL = "https://iracus-logistics.vercel.app"
 
 // mainMenu — базовое inline-меню по функционалу клиента.
 func mainMenu() tgbotapi.InlineKeyboardMarkup {

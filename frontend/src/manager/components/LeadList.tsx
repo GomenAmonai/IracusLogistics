@@ -8,6 +8,16 @@ import { CenteredState, ErrorNote, Spinner } from './ui'
 
 const FILTERS: (LeadStatus | 'all')[] = ['all', 'new', 'contacted', 'converted', 'rejected']
 
+// Deep-link бота: /start с id лида привязывает Telegram-аккаунт клиента к заявке (бот не
+// может написать первым — ссылку клиенту отправляет менеджер по телефону/WhatsApp).
+function clientInvite(lead: Lead): string {
+  return (
+    'Здравствуйте! Это Icaris Logistics. ' +
+    'Чтобы отслеживать груз и получать уведомления, откройте нашего бота: ' +
+    `https://t.me/IcarisLogBot?start=${lead.id}`
+  )
+}
+
 export function LeadList({ onAuthError }: { onAuthError: (err: unknown) => boolean }) {
   const [leads, setLeads] = useState<Lead[] | null>(null)
   const [filter, setFilter] = useState<LeadStatus | 'all'>('all')
@@ -101,10 +111,22 @@ function LeadCard({
   lead: Lead
   onStatusChange: (status: LeadStatus) => void
 }) {
+  const [isCopied, setCopied] = useState(false)
   const route = [lead.from_city, lead.to_city].filter(Boolean).join(' → ')
   const cargo = [lead.cargo_type, formatWeight(lead.weight), formatVolume(lead.volume)]
     .filter(Boolean)
     .join(' · ')
+
+  async function handleCopyInvite() {
+    try {
+      await navigator.clipboard.writeText(clientInvite(lead))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard недоступен (http без TLS, старый браузер) — покажем текст для ручного копирования.
+      window.prompt('Скопируйте сообщение для клиента:', clientInvite(lead))
+    }
+  }
 
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card">
@@ -152,6 +174,13 @@ function LeadCard({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => void handleCopyInvite()}
+          className="ml-auto rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-medium text-ink transition-colors duration-200 hover:border-accent"
+        >
+          {isCopied ? 'Скопировано ✓' : 'Ссылка для клиента'}
+        </button>
       </div>
     </article>
   )

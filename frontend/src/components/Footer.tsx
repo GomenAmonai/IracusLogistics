@@ -9,7 +9,7 @@ const REQUISITES = [
 const CONTACTS = [
   { label: 'Телефон', value: '+7 495 120-44-18', href: 'tel:+74951204418' },
   { label: 'Почта', value: 'cargo@icaris.ru', href: 'mailto:cargo@icaris.ru' },
-  { label: 'Telegram', value: '@icarislogisticsbot', href: 'https://t.me/icarislogisticsbot' },
+  { label: 'Telegram', value: '@IcarisLogBot', href: 'https://t.me/IcarisLogBot' },
 ]
 
 // Числовые реквизиты идут на терминал-чип; адрес/название — обычный текст.
