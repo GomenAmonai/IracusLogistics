@@ -32,3 +32,4 @@ assets/hero/
 
 # Внутренние документы — не для публичного репо
 *.pdf
+.graphifyignore
