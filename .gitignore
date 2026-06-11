@@ -28,3 +28,4 @@ iracus-landing-full.jpeg
 
 # Higgsfield raw renders (source; optimized copies live in frontend/public)
 assets/hero/
+.vercel
