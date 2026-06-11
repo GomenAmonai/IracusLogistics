@@ -23,11 +23,11 @@ func (f *fakeShipmentStore) Create(ctx context.Context, shipment *domain.Shipmen
 	return nil
 }
 
-func (f *fakeShipmentStore) List(ctx context.Context) ([]domain.Shipment, error) {
+func (f *fakeShipmentStore) List(ctx context.Context, limit, offset int) ([]domain.Shipment, error) {
 	return nil, nil
 }
 
-func (f *fakeShipmentStore) ListByClient(ctx context.Context, clientID uuid.UUID) ([]domain.Shipment, error) {
+func (f *fakeShipmentStore) ListByClient(ctx context.Context, clientID uuid.UUID, limit, offset int) ([]domain.Shipment, error) {
 	return nil, nil
 }
 

@@ -48,6 +48,7 @@ func (r *PaymentRepository) ListByShipment(ctx context.Context, shipmentID uuid.
 	err := r.db.WithContext(ctx).
 		Where("shipment_id = ?", shipmentID).
 		Order("created_at asc, id asc").
+		Limit(maxChildRows).
 		Find(&payments).Error
 	if err != nil {
 		return nil, err

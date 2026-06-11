@@ -19,7 +19,7 @@ var ErrValidation = errors.New("validation failed")
 // (на стороне потребителя), чтобы сервис не зависел от конкретного repository.
 type LeadStore interface {
 	Create(ctx context.Context, lead *domain.Lead) error
-	List(ctx context.Context) ([]domain.Lead, error)
+	List(ctx context.Context, limit, offset int) ([]domain.Lead, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Lead, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.LeadStatus) (*domain.Lead, error)
 }
@@ -73,8 +73,9 @@ func (s *LeadService) Create(ctx context.Context, input CreateLeadInput) (*domai
 	return lead, nil
 }
 
-func (s *LeadService) List(ctx context.Context) ([]domain.Lead, error) {
-	return s.store.List(ctx)
+func (s *LeadService) List(ctx context.Context, page Page) ([]domain.Lead, error) {
+	page = page.normalize()
+	return s.store.List(ctx, page.Limit, page.Offset)
 }
 
 func (s *LeadService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Lead, error) {

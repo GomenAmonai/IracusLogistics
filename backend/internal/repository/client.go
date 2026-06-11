@@ -71,9 +71,14 @@ func (r *ClientRepository) GetByTelegramID(ctx context.Context, telegramID int64
 	return &client, nil
 }
 
-func (r *ClientRepository) List(ctx context.Context) ([]domain.Client, error) {
+func (r *ClientRepository) List(ctx context.Context, limit, offset int) ([]domain.Client, error) {
 	var clients []domain.Client
-	if err := r.db.WithContext(ctx).Order("created_at desc").Find(&clients).Error; err != nil {
+	err := r.db.WithContext(ctx).
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&clients).Error
+	if err != nil {
 		return nil, err
 	}
 

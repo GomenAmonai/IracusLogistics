@@ -39,7 +39,7 @@ func (h AppShipmentHandler) List(c *gin.Context) {
 		return
 	}
 
-	shipments, err := h.shipments.ListByClientID(c.Request.Context(), clientID)
+	shipments, err := h.shipments.ListByClientID(c.Request.Context(), clientID, pageQuery(c))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "internal", "internal server error")
 		return

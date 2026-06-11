@@ -47,8 +47,10 @@ func Load() Config {
 		DatabaseURL: getEnv("DATABASE_URL", devDefaultDatabaseURL),
 
 		// Dev-дефолт секрета удобен локально; Validate() запрещает его вне development.
+		// TTL 4h: без отзыва токенов (техдолг #26) украденный JWT живёт весь срок — короткий
+		// дефолт сужает окно. Клиент в Telegram переавторизуется через initData незаметно.
 		JWTSecret: getEnv("JWT_SECRET", devDefaultJWTSecret),
-		JWTTTL:    getEnvDuration("JWT_TTL", 24*time.Hour),
+		JWTTTL:    getEnvDuration("JWT_TTL", 4*time.Hour),
 
 		// TrimSpace: секреты часто прилетают из env/дашбордов с хвостовым "\n" (копипаст,
 		// переменные Railway) — для токена и числового chat_id это ломает парсинг на старте.

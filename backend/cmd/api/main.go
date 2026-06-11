@@ -96,6 +96,12 @@ func main() {
 	})
 
 	isDev := cfg.AppEnv == "development"
+	// Дефолтные TrustedProxies доверяют всем приватным диапазонам — при втором hop за
+	// балансировщиком X-Forwarded-For можно подделать и обойти rate-limit (техдолг #27).
+	// Не fail-fast: на одноузловых платформах (Railway) дефолт безопасен, поэтому warning.
+	if !isDev && len(cfg.TrustedProxies) == 0 {
+		logger.Warn("TRUSTED_PROXIES not set: defaulting to all private ranges; set the load balancer address explicitly")
+	}
 	routerDeps := apphttp.RouterDeps{
 		DB:              gdb,
 		LeadService:     leadService,

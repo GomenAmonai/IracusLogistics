@@ -49,7 +49,7 @@ func (h ShipmentHandler) Create(c *gin.Context) {
 }
 
 func (h ShipmentHandler) List(c *gin.Context) {
-	shipments, err := h.shipments.List(c.Request.Context())
+	shipments, err := h.shipments.List(c.Request.Context(), pageQuery(c))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "internal", "internal server error")
 		return

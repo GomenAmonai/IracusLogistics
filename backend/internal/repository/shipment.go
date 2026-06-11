@@ -38,20 +38,27 @@ func (r *ShipmentRepository) Create(ctx context.Context, shipment *domain.Shipme
 	})
 }
 
-func (r *ShipmentRepository) List(ctx context.Context) ([]domain.Shipment, error) {
+func (r *ShipmentRepository) List(ctx context.Context, limit, offset int) ([]domain.Shipment, error) {
 	var shipments []domain.Shipment
-	if err := r.db.WithContext(ctx).Order("created_at desc").Find(&shipments).Error; err != nil {
+	err := r.db.WithContext(ctx).
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&shipments).Error
+	if err != nil {
 		return nil, err
 	}
 
 	return shipments, nil
 }
 
-func (r *ShipmentRepository) ListByClient(ctx context.Context, clientID uuid.UUID) ([]domain.Shipment, error) {
+func (r *ShipmentRepository) ListByClient(ctx context.Context, clientID uuid.UUID, limit, offset int) ([]domain.Shipment, error) {
 	var shipments []domain.Shipment
 	err := r.db.WithContext(ctx).
 		Where("client_id = ?", clientID).
 		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
 		Find(&shipments).Error
 	if err != nil {
 		return nil, err

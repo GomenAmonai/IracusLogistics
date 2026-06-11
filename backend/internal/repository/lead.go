@@ -25,9 +25,14 @@ func (r *LeadRepository) Create(ctx context.Context, lead *domain.Lead) error {
 	return r.db.WithContext(ctx).Create(lead).Error
 }
 
-func (r *LeadRepository) List(ctx context.Context) ([]domain.Lead, error) {
+func (r *LeadRepository) List(ctx context.Context, limit, offset int) ([]domain.Lead, error) {
 	var leads []domain.Lead
-	if err := r.db.WithContext(ctx).Order("created_at desc").Find(&leads).Error; err != nil {
+	err := r.db.WithContext(ctx).
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&leads).Error
+	if err != nil {
 		return nil, err
 	}
 

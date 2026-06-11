@@ -27,7 +27,7 @@ const initDataMaxAge = 24 * time.Hour
 type ClientStore interface {
 	GetByTelegramID(ctx context.Context, telegramID int64) (*domain.Client, error)
 	Create(ctx context.Context, client *domain.Client) error
-	List(ctx context.Context) ([]domain.Client, error)
+	List(ctx context.Context, limit, offset int) ([]domain.Client, error)
 }
 
 type ClientService struct {
@@ -126,6 +126,7 @@ func (s *ClientService) AuthenticateWebApp(ctx context.Context, initData string)
 	return signed, client, nil
 }
 
-func (s *ClientService) List(ctx context.Context) ([]domain.Client, error) {
-	return s.clients.List(ctx)
+func (s *ClientService) List(ctx context.Context, page Page) ([]domain.Client, error) {
+	page = page.normalize()
+	return s.clients.List(ctx, page.Limit, page.Offset)
 }

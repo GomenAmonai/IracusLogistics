@@ -92,7 +92,7 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
 | `PORT` | порт от облачной платформы (Railway/Render) | — |
 | `APP_ENV` | окружение | `development` |
 | `JWT_SECRET` | секрет подписи JWT | dev-дефолт (**в проде обязателен**) |
-| `JWT_TTL` | время жизни токена | `24h` |
+| `JWT_TTL` | время жизни токена | `4h` |
 | `TELEGRAM_BOT_TOKEN` | токен бота; пусто → бот выключен | `""` |
 | `MANAGER_CHAT_ID` | чат для уведомлений менеджеру | `""` |
 | `ALLOWED_ORIGINS` | CORS-белый список origin'ов, через запятую | пусто (вне dev кросс-домен запрещён) |
@@ -168,6 +168,9 @@ GET   /api/app/shipments/{id}/messages
 POST  /api/app/shipments/{id}/messages  # { "text" }
 GET   /api/app/shipments/{id}/payments  # платежи своего груза
 ```
+
+Списочные ручки принимают `?limit=&offset=` (дефолт 100, максимум 200), сортировка —
+новые сверху. Тела запросов ограничены 64 КиБ.
 
 Статусы груза: `pending, picked_up, in_transit, customs_clear, in_warehouse,
 out_for_delivery, delivered, cancelled`. Полосы: `cargo, white, buyout` (метка на грузе).

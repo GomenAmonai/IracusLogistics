@@ -19,7 +19,7 @@ func NewClientHandler(service *service.ClientService) ClientHandler {
 // List отдаёт менеджеру зарегистрированных клиентов — из этого списка он выбирает клиента
 // при заведении груза.
 func (h ClientHandler) List(c *gin.Context) {
-	clients, err := h.service.List(c.Request.Context())
+	clients, err := h.service.List(c.Request.Context(), pageQuery(c))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "internal", "internal server error")
 		return

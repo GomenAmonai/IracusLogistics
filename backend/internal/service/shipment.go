@@ -26,8 +26,8 @@ const (
 // потребителя). Create и UpdateStatus транзакционно пишут ещё и запись истории статуса.
 type ShipmentStore interface {
 	Create(ctx context.Context, shipment *domain.Shipment) error
-	List(ctx context.Context) ([]domain.Shipment, error)
-	ListByClient(ctx context.Context, clientID uuid.UUID) ([]domain.Shipment, error)
+	List(ctx context.Context, limit, offset int) ([]domain.Shipment, error)
+	ListByClient(ctx context.Context, clientID uuid.UUID, limit, offset int) ([]domain.Shipment, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Shipment, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.ShipmentStatus, comment string, changedBy uuid.UUID) (*domain.Shipment, error)
 	StatusHistory(ctx context.Context, shipmentID uuid.UUID) ([]domain.ShipmentStatusEvent, error)
@@ -129,23 +129,26 @@ func (s *ShipmentService) Create(ctx context.Context, managerID uuid.UUID, input
 	return shipment, nil
 }
 
-func (s *ShipmentService) List(ctx context.Context) ([]domain.Shipment, error) {
-	return s.store.List(ctx)
+func (s *ShipmentService) List(ctx context.Context, page Page) ([]domain.Shipment, error) {
+	page = page.normalize()
+	return s.store.List(ctx, page.Limit, page.Offset)
 }
 
-func (s *ShipmentService) ListByClientID(ctx context.Context, clientID uuid.UUID) ([]domain.Shipment, error) {
-	return s.store.ListByClient(ctx, clientID)
+func (s *ShipmentService) ListByClientID(ctx context.Context, clientID uuid.UUID, page Page) ([]domain.Shipment, error) {
+	page = page.normalize()
+	return s.store.ListByClient(ctx, clientID, page.Limit, page.Offset)
 }
 
 // ListByTelegramID — грузы клиента по его telegram_id (для команды /status в боте).
-// Незарегистрированный telegram_id → domain.ErrNotFound.
+// Незарегистрированный telegram_id → domain.ErrNotFound. Лимит фиксированный: ответ
+// бота — короткий текстовый список, 50 свежих грузов больше чем достаточно.
 func (s *ShipmentService) ListByTelegramID(ctx context.Context, telegramID int64) ([]domain.Shipment, error) {
 	client, err := s.clients.GetByTelegramID(ctx, telegramID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.store.ListByClient(ctx, client.ID)
+	return s.store.ListByClient(ctx, client.ID, 50, 0)
 }
 
 // Detail — груз и его история для менеджера (доступ ко всем грузам).

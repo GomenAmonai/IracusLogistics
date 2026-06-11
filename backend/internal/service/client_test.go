@@ -42,7 +42,7 @@ func (f *fakeClientStore) Create(ctx context.Context, client *domain.Client) err
 	return nil
 }
 
-func (f *fakeClientStore) List(ctx context.Context) ([]domain.Client, error) {
+func (f *fakeClientStore) List(ctx context.Context, limit, offset int) ([]domain.Client, error) {
 	return nil, nil
 }
 

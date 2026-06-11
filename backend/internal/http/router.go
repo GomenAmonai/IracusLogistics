@@ -73,7 +73,10 @@ func NewRouter(deps RouterDeps) (*gin.Engine, error) {
 	appShipment := handlers.NewAppShipmentHandler(deps.ShipmentService, deps.MessageService, deps.PaymentService)
 	payment := handlers.NewPaymentHandler(deps.PaymentService)
 
-	api := router.Group("/api")
+	// 64 КиБ покрывает любой легитимный JSON (формы, login, Telegram-апдейт ≤ ~30 КиБ),
+	// но отсекает многомегабайтные тела (OOM-вектор, техдолг #24). Внутренний лимит
+	// webhook-хендлера (1 МиБ) остаётся как второй рубеж.
+	api := router.Group("/api", middleware.MaxBodyBytes(64<<10))
 	{
 		// Публичные ручки. Свой лимитер на каждую: общий бакет дал бы спаму лидами
 		// выбить логин с того же IP (NAT/прокси). Защита от спама и перебора.

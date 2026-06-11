@@ -22,7 +22,7 @@ func (f *fakeLeadStore) Create(ctx context.Context, lead *domain.Lead) error {
 	return nil
 }
 
-func (f *fakeLeadStore) List(ctx context.Context) ([]domain.Lead, error) {
+func (f *fakeLeadStore) List(ctx context.Context, limit, offset int) ([]domain.Lead, error) {
 	return nil, nil
 }
 

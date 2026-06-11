@@ -40,7 +40,7 @@ func (h LeadHandler) Create(c *gin.Context) {
 }
 
 func (h LeadHandler) List(c *gin.Context) {
-	leads, err := h.service.List(c.Request.Context())
+	leads, err := h.service.List(c.Request.Context(), pageQuery(c))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "internal", "internal server error")
 		return
