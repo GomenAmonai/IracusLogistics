@@ -12,15 +12,20 @@ import (
 	"icaris-logistic/backend/internal/service"
 )
 
-// AppShipmentHandler — клиентские ручки WebApp по грузам и чату. Доступ только к своим
-// грузам: id клиента берётся из токена, не из запроса.
+// AppShipmentHandler — клиентские ручки WebApp по грузам, чату и платежам. Доступ только
+// к своим грузам: id клиента берётся из токена, не из запроса.
 type AppShipmentHandler struct {
 	shipments *service.ShipmentService
 	messages  *service.MessageService
+	payments  *service.PaymentService
 }
 
-func NewAppShipmentHandler(shipments *service.ShipmentService, messages *service.MessageService) AppShipmentHandler {
-	return AppShipmentHandler{shipments: shipments, messages: messages}
+func NewAppShipmentHandler(
+	shipments *service.ShipmentService,
+	messages *service.MessageService,
+	payments *service.PaymentService,
+) AppShipmentHandler {
+	return AppShipmentHandler{shipments: shipments, messages: messages, payments: payments}
 }
 
 type sendMessageRequest struct {
@@ -85,6 +90,28 @@ func (h AppShipmentHandler) ListMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, messages)
+}
+
+func (h AppShipmentHandler) ListPayments(c *gin.Context) {
+	clientID, ok := middleware.ClientID(c)
+	if !ok {
+		respondError(c, http.StatusUnauthorized, "unauthorized", "authorization required")
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid_id", "invalid shipment id")
+		return
+	}
+
+	payments, err := h.payments.ListForClient(c.Request.Context(), id, clientID)
+	if err != nil {
+		respondNotFoundOr500(c, err, "shipment not found")
+		return
+	}
+
+	c.JSON(http.StatusOK, payments)
 }
 
 func (h AppShipmentHandler) SendMessage(c *gin.Context) {

@@ -74,7 +74,7 @@ func main() {
 	clientService := service.NewClientService(clientRepo, cfg.TelegramBotToken, cfg.JWTSecret, cfg.JWTTTL)
 	shipmentService := service.NewShipmentService(shipmentRepo, clientRepo, notifier, bg)
 	messageService := service.NewMessageService(messageRepo, shipmentRepo, clientRepo, notifier, notifier, bg)
-	paymentService := service.NewPaymentService(paymentRepo, shipmentRepo)
+	paymentService := service.NewPaymentService(paymentRepo, shipmentRepo, clientRepo, notifier, bg)
 
 	// Источник апдейтов бота: webhook (URL задан — апдейты приходят на HTTP-ручку) либо
 	// long polling в горутине. Поллинг через bg, чтобы при остановке дождаться завершения

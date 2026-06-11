@@ -237,6 +237,16 @@ func (b *Bot) NotifyShipmentStatus(ctx context.Context, telegramID int64, shipme
 	return b.deliver(ctx, "shipment_status", telegramID, formatStatusUpdate(shipment))
 }
 
+// NotifyPaymentCreated уведомляет клиента о выставленном счёте (платёж в pending).
+func (b *Bot) NotifyPaymentCreated(ctx context.Context, telegramID int64, shipment *domain.Shipment, payment *domain.Payment) error {
+	return b.deliver(ctx, "payment_created", telegramID, formatPaymentCreated(shipment, payment))
+}
+
+// NotifyPaymentConfirmed уведомляет клиента о полученном платеже.
+func (b *Bot) NotifyPaymentConfirmed(ctx context.Context, telegramID int64, shipment *domain.Shipment, payment *domain.Payment) error {
+	return b.deliver(ctx, "payment_confirmed", telegramID, formatPaymentConfirmed(shipment, payment))
+}
+
 // NotifyClientMessage уведомляет менеджера о новом сообщении клиента.
 func (b *Bot) NotifyClientMessage(ctx context.Context, client *domain.Client, shipment *domain.Shipment, text string) error {
 	return b.deliver(ctx, "client_message", b.chatID, formatClientMessage(client, shipment, text))

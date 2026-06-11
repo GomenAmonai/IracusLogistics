@@ -88,6 +88,42 @@ func formatStatusUpdate(shipment *domain.Shipment) string {
 	return b.String()
 }
 
+// channelLabels — русские подписи каналов оплаты (как statusLabels — presentation-строки
+// живут в слое бота).
+var channelLabels = map[domain.PaymentChannel]string{
+	domain.PaymentChannelBankTransfer: "безнал по счёту",
+	domain.PaymentChannelCardSBP:      "карта / СБП",
+	domain.PaymentChannelCash:         "наличные",
+	domain.PaymentChannelCrypto:       "криптовалюта",
+}
+
+func channelLabel(channel domain.PaymentChannel) string {
+	if label, ok := channelLabels[channel]; ok {
+		return label
+	}
+
+	return string(channel)
+}
+
+// formatPaymentCreated — пуш клиенту о выставленном счёте (платёж создан в pending).
+func formatPaymentCreated(shipment *domain.Shipment, payment *domain.Payment) string {
+	var b strings.Builder
+	b.WriteString("По грузу " + shipment.TrackingKey + " выставлен счёт: " +
+		payment.Amount.String() + " " + payment.Currency + " (" + channelLabel(payment.Channel) + ").")
+	if payment.Comment != "" {
+		b.WriteString("\n" + payment.Comment)
+	}
+	b.WriteString("\nДетали — в приложении, в карточке груза.")
+
+	return b.String()
+}
+
+// formatPaymentConfirmed — пуш клиенту о полученном платеже.
+func formatPaymentConfirmed(shipment *domain.Shipment, payment *domain.Payment) string {
+	return "Платёж по грузу " + shipment.TrackingKey + " получен: " +
+		payment.Amount.String() + " " + payment.Currency + " (" + channelLabel(payment.Channel) + "). Спасибо!"
+}
+
 // formatClientMessage — уведомление менеджеру о новом сообщении клиента.
 func formatClientMessage(client *domain.Client, shipment *domain.Shipment, text string) string {
 	return "Сообщение от клиента " + client.Name + " по грузу " + shipment.TrackingKey + ":\n" + text

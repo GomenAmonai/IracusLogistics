@@ -70,7 +70,7 @@ func NewRouter(deps RouterDeps) (*gin.Engine, error) {
 	clientAuth := handlers.NewClientAuthHandler(deps.ClientService)
 	client := handlers.NewClientHandler(deps.ClientService)
 	shipment := handlers.NewShipmentHandler(deps.ShipmentService, deps.MessageService)
-	appShipment := handlers.NewAppShipmentHandler(deps.ShipmentService, deps.MessageService)
+	appShipment := handlers.NewAppShipmentHandler(deps.ShipmentService, deps.MessageService, deps.PaymentService)
 	payment := handlers.NewPaymentHandler(deps.PaymentService)
 
 	api := router.Group("/api")
@@ -119,6 +119,7 @@ func NewRouter(deps RouterDeps) (*gin.Engine, error) {
 			app.GET("/shipments/:id", appShipment.GetByID)
 			app.GET("/shipments/:id/messages", appShipment.ListMessages)
 			app.POST("/shipments/:id/messages", appShipment.SendMessage)
+			app.GET("/shipments/:id/payments", appShipment.ListPayments)
 		}
 	}
 
