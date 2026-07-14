@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -37,14 +38,15 @@ func NewLeadService(store LeadStore, notifier Notifier, bg *Background) *LeadSer
 // CreateLeadInput — данные публичной формы. weight/volume опциональны (NullDecimal),
 // остальные обязательные поля проверяет validate.
 type CreateLeadInput struct {
-	Name      string              `json:"name"`
-	Phone     string              `json:"phone"`
-	FromCity  string              `json:"from_city"`
-	ToCity    string              `json:"to_city"`
-	Weight    decimal.NullDecimal `json:"weight"`
-	Volume    decimal.NullDecimal `json:"volume"`
-	CargoType string              `json:"cargo_type"`
-	Comment   string              `json:"comment"`
+	Name                 string              `json:"name"`
+	Phone                string              `json:"phone"`
+	FromCity             string              `json:"from_city"`
+	ToCity               string              `json:"to_city"`
+	Weight               decimal.NullDecimal `json:"weight"`
+	Volume               decimal.NullDecimal `json:"volume"`
+	CargoType            string              `json:"cargo_type"`
+	Comment              string              `json:"comment"`
+	PrivacyNoticeVersion string              `json:"privacy_notice_version"`
 }
 
 func (s *LeadService) Create(ctx context.Context, input CreateLeadInput) (*domain.Lead, error) {
@@ -53,15 +55,18 @@ func (s *LeadService) Create(ctx context.Context, input CreateLeadInput) (*domai
 		return nil, err
 	}
 
+	consentedAt := time.Now().UTC()
 	lead := &domain.Lead{
-		Name:      input.Name,
-		Phone:     input.Phone,
-		FromCity:  input.FromCity,
-		ToCity:    input.ToCity,
-		Weight:    input.Weight,
-		Volume:    input.Volume,
-		CargoType: input.CargoType,
-		Comment:   input.Comment,
+		Name:                 input.Name,
+		Phone:                input.Phone,
+		FromCity:             input.FromCity,
+		ToCity:               input.ToCity,
+		Weight:               input.Weight,
+		Volume:               input.Volume,
+		CargoType:            input.CargoType,
+		Comment:              input.Comment,
+		PrivacyNoticeVersion: input.PrivacyNoticeVersion,
+		PrivacyConsentAt:     &consentedAt,
 	}
 
 	if err := s.store.Create(ctx, lead); err != nil {
@@ -116,6 +121,7 @@ func (i CreateLeadInput) normalized() CreateLeadInput {
 	i.ToCity = strings.TrimSpace(i.ToCity)
 	i.CargoType = strings.TrimSpace(i.CargoType)
 	i.Comment = strings.TrimSpace(i.Comment)
+	i.PrivacyNoticeVersion = strings.TrimSpace(i.PrivacyNoticeVersion)
 	return i
 }
 
@@ -131,6 +137,12 @@ func validateCreateLead(input CreateLeadInput) error {
 	}
 	if input.ToCity == "" {
 		return fmt.Errorf("%w: to_city is required", ErrValidation)
+	}
+	if input.PrivacyNoticeVersion == "" {
+		return fmt.Errorf("%w: privacy_notice_version is required", ErrValidation)
+	}
+	if len(input.PrivacyNoticeVersion) > 64 {
+		return fmt.Errorf("%w: privacy_notice_version is too long", ErrValidation)
 	}
 
 	return nil
