@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+.design-sync/
+.ds-sync/
+ds-bundle/
