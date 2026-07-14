@@ -4,8 +4,8 @@ B2B-сервис экспедирования грузов **Китай → Ро
 заявками, менеджерская обработка, Telegram-бот и Mini App для клиента (отслеживание грузов +
 чат). Учебный и коммерческий проект.
 
-Источник истины по направлению и фазам — [`AGENTS.md`](./AGENTS.md). Осознанные MVP-упрощения
-и техдолг — [`docs/tech-debt.md`](./docs/tech-debt.md). Разборы к ревью — [`docs/`](./docs).
+Источник истины по направлению и фазам — [`docs/ROADMAP.md`](./docs/ROADMAP.md). Осознанные
+MVP-упрощения и техдолг — [`docs/tech-debt.md`](./docs/tech-debt.md).
 
 ## Что умеет (MVP)
 
@@ -43,7 +43,7 @@ backend/
     token/         # выпуск/разбор JWT с ролью (manager | client)
     telegram/      # проверка подписи Telegram initData (HMAC)
     bot/           # Telegram-бот (команды + уведомления)
-  migrations/      # SQL-миграции (схема v12)
+  migrations/      # SQL-миграции (схема v13)
 frontend/
   index.html  + src/                # лендинг
   webapp.html + src/webapp/         # Telegram Mini App
@@ -66,7 +66,7 @@ frontend/
 docker compose up -d postgres        # Postgres на :5433
 
 cd backend
-go run ./cmd/migrate up              # применить миграции (до v12)
+go run ./cmd/migrate up              # применить миграции (до v13)
 go run ./cmd/createmanager -email=manager@example.com -name="Имя" -password='<свой-пароль>'
 go run ./cmd/api                     # http://localhost:8080 (без TELEGRAM_BOT_TOKEN бот в no-op)
 
@@ -100,32 +100,25 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
 | `TELEGRAM_WEBHOOK_URL` | https-URL ручки webhook; задан → бот без polling | пусто (long polling) |
 | `TELEGRAM_WEBHOOK_SECRET` | секрет webhook (обязателен вместе с URL) | `""` |
 
-Фронтенд: `VITE_API_BASE` — базовый URL бэкенда (без пути, код добавляет `/api`). Запекается
-в бандл **на этапе сборки**. Локально не задаётся (относительный `/api` через прокси Vite).
+Фронтенд-переменные запекаются в бандл **на этапе сборки**:
 
-## Деплой (staging)
+| Переменная | Назначение |
+|---|---|
+| `VITE_API_BASE` | базовый URL бэкенда без `/api`; локально не задаётся |
+| `VITE_PRIVACY_POLICY_URL` | публичный URL действующей политики обработки данных |
+| `VITE_PRIVACY_NOTICE_VERSION` | короткая версия политики, сохраняемая вместе с заявкой |
 
-**Backend + Postgres — Railway, frontend — Vercel.** Бот живёт в том же процессе API
-(long polling), поэтому хост не должен засыпать — Railway с `sleepApplication: false`
-(Render free отпал: сервисы спят 15 минут и убивают polling).
+Если URL или версия политики не заданы, форма заявки намеренно отключена.
 
-- **Railway:** сервис `icaris-api` + Postgres `icaris-db`. `DATABASE_URL` — reference-переменная
-  `${{icaris-db.DATABASE_URL}}`; плюс `APP_ENV=production`, `JWT_SECRET`, `TELEGRAM_BOT_TOKEN`,
-  `MANAGER_CHAT_ID`, `ALLOWED_ORIGINS=<vercel-домен>`. Healthcheck — `/api/health`.
-  Билдер RAILPACK собирает только `cmd/api`, поэтому **миграции гоняются с локальной машины**
-  по публичному URL БД: `DATABASE_URL='<public url>' go run ./cmd/migrate up`.
-- **Vercel:** проект с Root Directory = `frontend`, все три точки входа собираются. В переменных
-  проекта (Production+Preview) задан `VITE_API_BASE` = URL Railway-API — он запекается в бандл
-  при сборке; после смены значения нужен redeploy без кэша.
-- **Mini App в боте:** кнопка-меню → `https://<project>.vercel.app/webapp.html`
-  (@BotFather → *Bot Settings → Menu Button*). Именно страница WebApp, не корень и не API.
-  Telegram кэширует Mini App — после деплоя бандла иногда нужно чистить кэш Telegram.
+## Деплой
 
-> Не запускать второй экземпляр API с тем же токеном бота (локально + облако): Telegram
-> отдаёт 409 на конкурирующий long polling. Локально — без `TELEGRAM_BOT_TOKEN`.
-> Webhook-режим и outbox реализованы; на Railway webhook включается переменными
-> `TELEGRAM_WEBHOOK_*` (см. `docs/tech-debt.md` #22).
-> `render.yaml` оставлен как запасной блюпринт (на free-плане Render не годится).
+Production сейчас не развёрнут. Старые Railway API и база удалены; существующий Vercel-деплой
+может показывать устаревшую сборку и не является рабочим сервисом. Целевая российская
+инфраструктура, staging и порядок выпуска описаны в [`docs/ROADMAP.md`](./docs/ROADMAP.md).
+
+Миграции должны выполняться отдельным контролируемым шагом до запуска новой версии API.
+Mini App должна открывать `/webapp.html` на актуальном frontend-домене. Не запускайте два
+экземпляра API с одним Telegram-токеном в режиме long polling: Telegram вернёт конфликт 409.
 
 ## API
 
@@ -133,7 +126,7 @@ WebApp без Telegram в DEV принимается `/webapp.html?token=<client
 
 ```http
 GET  /api/health
-POST /api/leads               # форма с сайта (без авторизации)
+POST /api/leads               # форма; обязательна privacy_notice_version
 POST /api/auth/login          # менеджер: { "email", "password" } → { "token" }
 POST /api/app/auth/telegram   # клиент: { "init_data" } (Telegram WebApp) → { "token", "client" }
 ```
@@ -185,13 +178,16 @@ out_for_delivery, delivered, cancelled`. Полосы: `cargo, white, buyout` (�
 ## Тесты
 
 ```bash
-cd backend && go test ./...   # репозиторий-тесты сами пропускаются без БД (CI без базы зелёный)
-cd frontend && npm run build  # tsc + сборка всех трёх точек входа
+docker compose up -d postgres
+cd backend && go run ./cmd/migrate up && go test ./... && go vet ./... && go build ./...
+cd ../frontend && npm ci && npm run lint && npm run build
 ```
+
+Repository-тесты используют PostgreSQL на `localhost:5433`; без доступной БД они пропускаются.
 
 ## Документы
 
-- [`AGENTS.md`](./AGENTS.md) — направление и фазы (источник истины).
+- [`docs/ROADMAP.md`](./docs/ROADMAP.md) — направление, порядок работ и условия релиза.
 - [`docs/architecture.md`](./docs/architecture.md) — доменная модель и границы MVP.
 - [`docs/tech-debt.md`](./docs/tech-debt.md) — осознанные MVP-упрощения и техдолг.
-- [`docs/learning-phase2.md`](./docs/learning-phase2.md), [`docs/learning-phase3-5.md`](./docs/learning-phase3-5.md) — разборы к ревью.
+- [`docs/backend-onboarding.md`](./docs/backend-onboarding.md) — вводный обзор backend.

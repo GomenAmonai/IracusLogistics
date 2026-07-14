@@ -24,8 +24,8 @@ type Payment struct {
 	UpdatedAt  time.Time       `gorm:"not null;default:now()" json:"updated_at"`
 }
 
-// PaymentChannel — канал оплаты. Набор ратифицирован Hiki 2026-06-10: реальные способы
-// расчёта в бизнесе (мультиканальность — часть модели, см. PROGRESS.md).
+// PaymentChannel — канал оплаты. Набор отражает текущую мультиканальную модель MVP;
+// доступные клиенту способы должны быть подтверждены до production-запуска.
 type PaymentChannel string
 
 const (

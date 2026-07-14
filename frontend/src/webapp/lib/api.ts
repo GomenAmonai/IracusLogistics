@@ -3,9 +3,9 @@ import type { Client, Message, Payment, Shipment, ShipmentDetail } from './types
 // Клиентский API WebApp. Bearer-токен (client-JWT) держим в памяти модуля: его выдаёт
 // /app/auth/telegram, дальше им подписываем каждый запрос.
 
-// Базовый URL API. Пусто (локально) → относительный /api через прокси Vite. На задеплоенном
-// фронте (Vercel) задаём VITE_API_BASE на публичный backend; запросы идут кросс-доменно
-// (бэкенд отдаёт CORS *), авторизация по Bearer — куки не нужны, CSRF не возникает.
+// Базовый URL API. Пусто (локально) → относительный /api через прокси Vite. При раздельном
+// деплое задаём VITE_API_BASE, а origin фронта добавляем в allowlist бэкенда. Авторизация
+// использует Bearer, куки не отправляются.
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
 
 let authToken = ''
