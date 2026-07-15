@@ -1,8 +1,8 @@
 // Контракт публичной формы. Поля 1:1 с доменной моделью Lead на бэкенде.
 // Пустые опциональные поля (weight/volume/cargo_type/comment) в тело НЕ включаем.
 
-// Базовый URL API. Пусто (локально) → относительный /api через прокси Vite. На задеплоенном
-// фронте (Vercel) задаём VITE_API_BASE на публичный backend; бэкенд отдаёт CORS *.
+// Базовый URL API. Пусто (локально) → относительный /api через прокси Vite. При раздельном
+// деплое задаём VITE_API_BASE на публичный backend, а origin фронта добавляем в allowlist.
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
 
 export type CreateLeadInput = {
@@ -14,6 +14,7 @@ export type CreateLeadInput = {
   volume?: number
   cargo_type?: string
   comment?: string
+  privacy_notice_version: string
 }
 
 export type Lead = {

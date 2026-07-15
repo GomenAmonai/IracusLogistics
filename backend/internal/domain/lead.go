@@ -20,7 +20,11 @@ type Lead struct {
 	CargoType string              `gorm:"type:varchar(255)" json:"cargo_type"`
 	Comment   string              `gorm:"type:text" json:"comment"`
 	Status    LeadStatus          `gorm:"type:varchar(20);not null;default:new" json:"status"`
-	CreatedAt time.Time           `gorm:"not null;default:now()" json:"created_at"`
+	// PrivacyNoticeVersion фиксирует редакцию политики, с которой согласился заявитель.
+	// PrivacyConsentAt задаётся сервером: времени из браузера доверять нельзя.
+	PrivacyNoticeVersion string     `gorm:"type:varchar(64)" json:"privacy_notice_version"`
+	PrivacyConsentAt     *time.Time `json:"privacy_consent_at"`
+	CreatedAt            time.Time  `gorm:"not null;default:now()" json:"created_at"`
 }
 
 type LeadStatus string

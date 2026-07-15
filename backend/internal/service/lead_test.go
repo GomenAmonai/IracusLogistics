@@ -50,13 +50,45 @@ func TestLeadService_CreateRejectsMissingName(t *testing.T) {
 	svc := service.NewLeadService(&fakeLeadStore{}, noopNotifier{}, nil)
 
 	_, err := svc.Create(context.Background(), service.CreateLeadInput{
-		Phone:    "+79990001122",
-		FromCity: "Guangzhou",
-		ToCity:   "Moscow",
+		Phone:                "+79990001122",
+		FromCity:             "Guangzhou",
+		ToCity:               "Moscow",
+		PrivacyNoticeVersion: "2026-07-14",
 	})
 
 	if !errors.Is(err, service.ErrValidation) {
 		t.Errorf("expected ErrValidation, got %v", err)
+	}
+}
+
+func TestLeadService_CreateRequiresPrivacyNoticeVersion(t *testing.T) {
+	svc := service.NewLeadService(&fakeLeadStore{}, nil, nil)
+
+	_, err := svc.Create(context.Background(), service.CreateLeadInput{
+		Name: "Ivan", Phone: "+79990001122", FromCity: "Guangzhou", ToCity: "Moscow",
+	})
+
+	if !errors.Is(err, service.ErrValidation) {
+		t.Errorf("expected ErrValidation, got %v", err)
+	}
+}
+
+func TestLeadService_CreateStoresConsentEvidence(t *testing.T) {
+	store := &fakeLeadStore{}
+	svc := service.NewLeadService(store, nil, nil)
+
+	lead, err := svc.Create(context.Background(), service.CreateLeadInput{
+		Name: " Ivan ", Phone: "+79990001122", FromCity: "Guangzhou", ToCity: "Moscow",
+		PrivacyNoticeVersion: " privacy-v1 ",
+	})
+	if err != nil {
+		t.Fatalf("create lead: %v", err)
+	}
+	if lead.PrivacyNoticeVersion != "privacy-v1" {
+		t.Fatalf("unexpected privacy notice version: %q", lead.PrivacyNoticeVersion)
+	}
+	if lead.PrivacyConsentAt == nil || lead.PrivacyConsentAt.IsZero() {
+		t.Fatal("privacy consent time must be set by server")
 	}
 }
 

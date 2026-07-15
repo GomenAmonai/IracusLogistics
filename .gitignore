@@ -22,6 +22,12 @@ frontend/dist/
 
 # Agent/test artifacts
 .playwright-mcp/
+.claude/
+.codex/
+.mcp.json
+AGENTS.md
+PROGRESS.md
+render.yaml
 # graphify кэш: содержит сырой контент репо (включая случайно попавшие секреты) — не коммитить
 graphify-out/
 iracus-landing-full.jpeg
@@ -33,3 +39,11 @@ assets/hero/
 # Внутренние документы — не для публичного репо
 *.pdf
 .graphifyignore
+docs/audit-*.md
+docs/learning-*.md
+docs/v1-plan-*.md
+
+# Локальные дизайн-инструменты и их сборки
+frontend/.design-sync/
+frontend/.ds-sync/
+frontend/ds-bundle/

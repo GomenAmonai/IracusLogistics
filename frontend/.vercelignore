@@ -1,0 +1,7 @@
+.design-sync/
+.ds-sync/
+ds-bundle/
+node_modules/
+dist/
+.env
+*.local

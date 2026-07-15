@@ -43,6 +43,9 @@ type Status =
   | { kind: 'error'; message: string }
 
 const RESPONSE_HOURS = 2
+const PRIVACY_POLICY_URL = (import.meta.env.VITE_PRIVACY_POLICY_URL ?? '').trim()
+const PRIVACY_NOTICE_VERSION = (import.meta.env.VITE_PRIVACY_NOTICE_VERSION ?? '').trim()
+const IS_LEAD_FORM_ENABLED = Boolean(PRIVACY_POLICY_URL && PRIVACY_NOTICE_VERSION)
 
 function toNumber(raw: string): number | undefined {
   const trimmed = raw.trim()
@@ -98,6 +101,14 @@ export function LeadForm({ prefill }: LeadFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!IS_LEAD_FORM_ENABLED) {
+      setStatus({
+        kind: 'error',
+        message: 'Онлайн-заявка временно недоступна. Напишите менеджеру в Telegram.',
+      })
+      return
+    }
+
     const errors = validate(form)
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
@@ -113,6 +124,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
       phone: form.phone.trim(),
       from_city: form.fromCity.trim(),
       to_city: form.toCity.trim(),
+      privacy_notice_version: PRIVACY_NOTICE_VERSION,
     }
     const weight = toNumber(form.weight)
     const volume = toNumber(form.volume)
@@ -327,12 +339,27 @@ export function LeadForm({ prefill }: LeadFormProps) {
                 type="checkbox"
                 className="mt-1 h-4 w-4 shrink-0 accent-accent"
                 checked={form.consent}
+                disabled={!IS_LEAD_FORM_ENABLED}
                 onChange={(event) => update('consent', event.target.checked)}
                 aria-invalid={Boolean(fieldErrors.consent)}
                 aria-describedby={fieldErrors.consent ? 'err-consent' : undefined}
               />
               <span>
-                Согласен на обработку персональных данных для ответа на заявку.
+                Согласен на обработку указанных данных для ответа на заявку и связь со мной
+                по телефону или в Telegram в соответствии с{' '}
+                {PRIVACY_POLICY_URL ? (
+                  <a
+                    href={PRIVACY_POLICY_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-ink underline underline-offset-2 hover:text-accent"
+                  >
+                    политикой обработки персональных данных
+                  </a>
+                ) : (
+                  <span className="text-alert">политикой, которая пока не опубликована</span>
+                )}
+                .
                 {fieldErrors.consent && (
                   <span id="err-consent" className="mt-1 block text-alert">
                     {fieldErrors.consent}
@@ -385,18 +412,33 @@ export function LeadForm({ prefill }: LeadFormProps) {
             </p>
           )}
 
+          {!IS_LEAD_FORM_ENABLED && status.kind !== 'error' && (
+            <p role="status" className="rounded-xl border border-alert/40 bg-alert/5 px-4 py-3 text-sm text-alert">
+              Онлайн-заявка временно закрыта до публикации политики обработки данных. Связаться
+              можно с менеджером{' '}
+              <a className="underline underline-offset-2" href="https://t.me/hikill8">
+                @hikill8
+              </a>
+              .
+            </p>
+          )}
+
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !IS_LEAD_FORM_ENABLED}
             className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3.5 text-base font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-60"
             aria-busy={isSubmitting}
           >
-            {isSubmitting ? 'Отправляем…' : 'Отправить заявку'}
+            {isSubmitting
+              ? 'Отправляем…'
+              : IS_LEAD_FORM_ENABLED
+                ? 'Отправить заявку'
+                : 'Приём заявок временно закрыт'}
           </button>
 
           <p className="text-xs leading-relaxed text-ink-soft">
-            Ответ в течение {RESPONSE_HOURS} часов в рабочее время. Данные используем только
-            для обработки заявки и не передаём третьим лицам.
+            После включения формы условия обработки данных доступны по ссылке рядом с
+            согласием. Не отправляйте сведения о грузе через форму, пока политика недоступна.
           </p>
         </aside>
       </form>
