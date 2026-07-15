@@ -8,6 +8,7 @@ export type LeadPrefill = {
   cargoType: string
   weight: string
   volume: string
+  comment: string
 }
 
 type FormState = {
@@ -42,7 +43,6 @@ type Status =
   | { kind: 'success'; leadId: string }
   | { kind: 'error'; message: string }
 
-const RESPONSE_HOURS = 2
 const PRIVACY_POLICY_URL = (import.meta.env.VITE_PRIVACY_POLICY_URL ?? '').trim()
 const PRIVACY_NOTICE_VERSION = (import.meta.env.VITE_PRIVACY_NOTICE_VERSION ?? '').trim()
 const IS_LEAD_FORM_ENABLED = Boolean(PRIVACY_POLICY_URL && PRIVACY_NOTICE_VERSION)
@@ -81,7 +81,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
-  // Калькулятор передаёт введённые данные — предзаполняем форму при их изменении.
+  // Блок расчёта передаёт введённые данные — предзаполняем форму при их изменении.
   useEffect(() => {
     if (!prefill) return
     setForm((current) => ({
@@ -90,6 +90,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
       cargoType: prefill.cargoType || current.cargoType,
       weight: prefill.weight || current.weight,
       volume: prefill.volume || current.volume,
+      comment: prefill.comment || current.comment,
     }))
   }, [prefill])
 
@@ -163,8 +164,8 @@ export function LeadForm({ prefill }: LeadFormProps) {
             Заявка принята
           </h2>
           <p className="mt-3 text-base leading-relaxed text-ink-soft">
-            Менеджер свяжется с вами в течение {RESPONSE_HOURS} часов и зафиксирует точную
-            стоимость после проверки документов.
+            Менеджер проверит вводные, свяжется с вами и письменно зафиксирует условия
+            до начала перевозки.
           </p>
           <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 border-t border-line-soft pt-5 text-sm text-ink-soft">
             Номер заявки:{' '}
@@ -189,8 +190,8 @@ export function LeadForm({ prefill }: LeadFormProps) {
       id="lead"
       surface
       eyebrow="Заявка"
-      title="Оставьте заявку — посчитаем точную стоимость"
-      intro={`Ответим в течение ${RESPONSE_HOURS} часов в рабочее время. Регистрация не нужна.`}
+      title="Оставьте данные для индивидуального расчёта"
+      intro="Регистрация не нужна. Менеджер проверит вводные и свяжется с вами по указанному контакту."
     >
       <form className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]" onSubmit={handleSubmit} noValidate>
         <div className="grid gap-5 rounded-2xl border border-line bg-surface p-6 shadow-soft sm:grid-cols-2 sm:p-8">
@@ -392,7 +393,7 @@ export function LeadForm({ prefill }: LeadFormProps) {
                 >
                   02
                 </span>
-                Зафиксирует точную стоимость и срок.
+                Зафиксирует согласованные стоимость и срок.
               </li>
               <li className="flex gap-3 text-sm leading-relaxed text-ink-soft">
                 <span

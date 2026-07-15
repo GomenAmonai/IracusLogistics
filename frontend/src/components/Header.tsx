@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 const NAV_LINKS = [
   { href: '#how', label: 'Как работаем' },
-  { href: '#calc', label: 'Калькулятор' },
+  { href: '#calc', label: 'Расчёт' },
   { href: '#services', label: 'Услуги' },
   { href: '#faq', label: 'FAQ' },
   { href: '#contacts', label: 'Контакты' },
@@ -91,7 +91,7 @@ export function Header() {
                 : 'bg-amber text-night hover:bg-white'
             }`}
           >
-            Рассчитать доставку
+            Запросить расчёт
           </a>
           <button
             type="button"
@@ -136,7 +136,7 @@ export function Header() {
                 className="mt-2 block rounded-full bg-accent px-2 py-3 text-center text-base font-semibold text-surface"
                 onClick={() => setMenuOpen(false)}
               >
-                Рассчитать доставку
+                Запросить расчёт
               </a>
             </li>
           </ul>

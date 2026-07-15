@@ -11,6 +11,7 @@ React + TypeScript + Vite. Три точки входа одного проек�
 ```bash
 npm install
 npm run dev      # http://localhost:5173 (лендинг), /webapp.html (Mini App), /manager.html (панель); /api → :8080
+npm run dev:demo # локальная форма с тестовым уведомлением; только вымышленные данные
 npm run build    # tsc -b && vite build → dist/ (все три точки входа)
 npm run lint     # tsc -b --pretty false
 ```
@@ -28,5 +29,9 @@ npm run lint     # tsc -b --pretty false
 - `VITE_PRIVACY_NOTICE_VERSION` — версия документа, сохраняемая с заявкой.
 
 Без обеих переменных форма остаётся выключенной.
+
+Режим `npm run dev:demo` читает `.env.demo` и открывает локальное тестовое уведомление
+`privacy.local.html`. Оно не является юридическим документом и не включено в точки входа
+production-сборки.
 
 Полная картина (стек, запуск бэкенда, деплой, API) — в [корневом README](../README.md).
