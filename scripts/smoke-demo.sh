@@ -27,10 +27,17 @@ expect_jq() {
 
 seed_output="$(cd "$ROOT_DIR/backend" && go run ./cmd/seed-demo -frontend-url "$FRONTEND_BASE")"
 client_url="$(sed -n 's/^Клиент: //p' <<<"$seed_output")"
+empty_client_url="$(sed -n 's/^Клиент без грузов: //p' <<<"$seed_output")"
 client_token="${client_url#*token=}"
+empty_client_token="${empty_client_url#*token=}"
 
 if [[ -z "$client_token" || "$client_token" == "$client_url" ]]; then
   echo "FAIL: seed-demo не вернул client-токен" >&2
+  exit 1
+fi
+
+if [[ -z "$empty_client_token" || "$empty_client_token" == "$empty_client_url" ]]; then
+  echo "FAIL: seed-demo не вернул токен клиента без грузов" >&2
   exit 1
 fi
 
@@ -64,6 +71,11 @@ client_shipments="$(curl --fail --silent --show-error \
   -H "Authorization: Bearer $client_token" \
   "$API_BASE/app/shipments")"
 expect_jq "$client_shipments" 'any(.[]; .tracking_key == "ICR-DEM0000000")' "клиент видит только свой demo-груз"
+
+empty_client_shipments="$(curl --fail --silent --show-error \
+  -H "Authorization: Bearer $empty_client_token" \
+  "$API_BASE/app/shipments")"
+expect_jq "$empty_client_shipments" 'length == 0' "новый demo-клиент видит корректное пустое состояние"
 
 client_detail="$(curl --fail --silent --show-error \
   -H "Authorization: Bearer $client_token" \

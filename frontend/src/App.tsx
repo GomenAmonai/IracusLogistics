@@ -10,6 +10,7 @@ import { Kpi } from './components/Kpi'
 import { LeadForm, type LeadPrefill } from './components/LeadForm'
 import { Routes } from './components/Routes'
 import { Services } from './components/Services'
+import { MODE_LABELS } from './lib/calc'
 
 function App() {
   const [prefill, setPrefill] = useState<LeadPrefill | null>(null)
@@ -20,6 +21,7 @@ function App() {
       cargoType: input.cargoType,
       weight: input.weight,
       volume: input.volume,
+      comment: `Предпочтительный способ перевозки: ${MODE_LABELS[input.mode]}`,
     })
     document.getElementById('lead')?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -30,7 +32,7 @@ function App() {
         href="#calc"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:inline-flex focus:items-center focus:rounded-full focus:bg-accent focus:px-5 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-surface focus:shadow-card"
       >
-        К калькулятору
+        К параметрам расчёта
       </a>
       <Header />
       <main>

@@ -56,7 +56,7 @@ export function Footer() {
               href="#lead"
               className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep"
             >
-              Рассчитать доставку
+              Запросить расчёт
             </a>
           </div>
         </div>

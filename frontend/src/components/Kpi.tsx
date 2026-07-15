@@ -1,17 +1,14 @@
 import { useReveal } from '../lib/hooks'
 
 type Stat = {
-  target: number
-  suffix: string
-  decimals: number
+  value: string
   label: string
 }
 
-// «9 лет» живёт в метриках hero — здесь без дублей.
 const STATS: Stat[] = [
-  { target: 640, suffix: '', decimals: 0, label: 'тонн груза в месяц' },
-  { target: 22, suffix: '', decimals: 0, label: 'дней средний транзит' },
-  { target: 100, suffix: '%', decimals: 0, label: 'грузов с трекингом' },
+  { value: 'Заявка', label: 'вводные по грузу' },
+  { value: 'Менеджер', label: 'расчёт и условия' },
+  { value: 'Трекинг', label: 'статусы, платежи и чат' },
 ]
 
 const MODES = ['Авто', 'ЖД', 'Авиа', 'Море']
@@ -20,8 +17,7 @@ function StatCell({ stat }: { stat: Stat }) {
   return (
     <div className="flex flex-col items-center px-4 py-8 text-center sm:px-5">
       <span className="terminal text-3xl font-semibold sm:text-4xl">
-        {stat.target.toFixed(stat.decimals)}
-        {stat.suffix}
+        {stat.value}
       </span>
       <span className="mt-3 block font-mono text-[0.7rem] uppercase leading-snug tracking-[0.04em] text-ink-soft">
         {stat.label}
@@ -37,7 +33,7 @@ export function Kpi() {
     <section
       ref={ref}
       className={`reveal ${isVisible ? 'reveal-in' : ''} border-t border-line bg-base-tint`}
-      aria-label="Показатели работы"
+      aria-label="Контур сервиса"
     >
       <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8">
         {/* Воздушный ряд показателей: мягкая surface-карточка, делители-линии вместо острых рамок */}

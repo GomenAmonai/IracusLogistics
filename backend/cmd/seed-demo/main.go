@@ -25,6 +25,7 @@ const (
 	demoManagerEmail    = "demo@icaris.local"
 	demoManagerPassword = "demo-local-only"
 	demoTelegramID      = int64(9000000001)
+	demoEmptyTelegramID = int64(9000000002)
 	demoMarker          = "[icaris-local-demo]"
 	demoTrackingKey     = "ICR-DEM0000000"
 )
@@ -70,6 +71,16 @@ func main() {
 		}
 		client.LeadID = &lead.ID
 	}
+	emptyClient, err := clientService.Register(
+		ctx,
+		demoEmptyTelegramID,
+		"icaris_demo_empty",
+		"Новый демо-клиент",
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("seed empty client: %v", err)
+	}
 
 	shipment, err := ensureShipment(ctx, gdb, manager, client)
 	if err != nil {
@@ -86,6 +97,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("issue client token: %v", err)
 	}
+	emptyClientToken, err := token.Issue(
+		[]byte(cfg.JWTSecret),
+		emptyClient.ID,
+		domain.RoleClient,
+		cfg.JWTTTL,
+	)
+	if err != nil {
+		log.Fatalf("issue empty client token: %v", err)
+	}
 
 	baseURL := strings.TrimRight(*frontendURL, "/")
 	fmt.Println("Демо-сценарий готов.")
@@ -93,6 +113,7 @@ func main() {
 	fmt.Printf("  email: %s\n", demoManagerEmail)
 	fmt.Printf("  password: %s\n", demoManagerPassword)
 	fmt.Printf("Клиент: %s/webapp.html?token=%s\n", baseURL, url.QueryEscape(clientToken))
+	fmt.Printf("Клиент без грузов: %s/webapp.html?token=%s\n", baseURL, url.QueryEscape(emptyClientToken))
 	fmt.Printf("Груз: %s (%s → %s)\n", shipment.TrackingKey, shipment.FromCity, shipment.ToCity)
 }
 

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
-import { calcPriceRange, MODE_LABELS, type ShippingMode } from '../lib/calc'
+import { MODE_LABELS, type ShippingMode } from '../lib/calc'
 import { Section } from './Section'
 
 export type CalcPrefill = {
@@ -28,20 +28,15 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
   const weightNum = Number(weight.replace(',', '.')) || 0
   const volumeNum = Number(volume.replace(',', '.')) || 0
 
-  const result = useMemo(
-    () => calcPriceRange(weightNum, volumeNum, mode),
-    [weightNum, volumeNum, mode],
-  )
-
   const hasInput = weightNum > 0 || volumeNum > 0
 
   return (
     <Section
       id="calc"
       surface
-      eyebrow="Тариф"
-      title="Калькулятор диапазона цены"
-      intro="Введите параметры груза — увидите предварительную вилку и срок доставки. Это оценка по нашим базовым ставкам, а не оффер."
+      eyebrow="Расчёт"
+      title="Подготовьте данные для расчёта"
+      intro="Укажите основные параметры груза и перенесите их в заявку. Стоимость, маршрут и срок менеджер рассчитает после проверки данных."
     >
       <div className="grid gap-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8 lg:grid-cols-[1fr_1fr] lg:gap-8">
         {/* Панель-инпуты */}
@@ -136,40 +131,30 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
             </div>
           </div>
 
-          <p className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-relaxed text-ink-soft">
-            Расчётный вес — больше из фактического и объёмного:{' '}
-            <span className="terminal text-sm">{result.chargeableKg} кг</span>
+          <p className="mt-5 text-sm leading-relaxed text-ink-soft">
+            Эти параметры сохранятся в форме ниже. Никакие ставки или сроки на этом шаге
+            не подставляются автоматически.
           </p>
         </div>
 
         {/* Блок результата — мягкая surface-карточка с терминал-показаниями */}
         <div className="flex flex-col justify-between rounded-2xl bg-surface-soft p-6 shadow-soft sm:p-7">
           <div>
-            <p className="eyebrow mb-4">Предварительная оценка</p>
+            <p className="eyebrow mb-4">Вводные для менеджера</p>
             <div aria-live="polite">
-              <p className="field-label">Диапазон стоимости</p>
-              {/* Цена — крупное терминал-табло, фосфор на тёмном чипе */}
-              <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-2 leading-tight">
-                <span className="text-ink-soft">от</span>
-                <span className="terminal whitespace-nowrap text-2xl font-bold tracking-[-0.02em] sm:text-3xl md:text-4xl">
-                  ${result.low.toLocaleString('ru-RU')}
-                </span>
-                <span className="text-ink-soft">до</span>
-                <span className="terminal whitespace-nowrap text-2xl font-bold tracking-[-0.02em] sm:text-3xl md:text-4xl">
-                  ${result.high.toLocaleString('ru-RU')}
-                </span>
+              <p className="field-label">Предпочтительный способ</p>
+              <p className="terminal mt-3 text-3xl font-bold tracking-[-0.02em] text-ink">
+                {MODE_LABELS[mode]}
               </p>
               <div className="mt-6 flex items-center justify-between border-t border-line-soft pt-4">
-                <span className="field-label">Срок доставки</span>
-                <span className="terminal text-base">
-                  {result.etaDays[0]}–{result.etaDays[1]} дней
-                </span>
+                <span className="field-label">Параметры</span>
+                <span className="terminal text-base">{weight || '—'} кг · {volume || '—'} м³</span>
               </div>
             </div>
 
             <p className="mt-5 text-sm leading-relaxed text-ink-soft">
-              Предварительная оценка — точную сумму фиксирует менеджер после проверки
-              документов и характеристик груза.
+              Публичный расчёт будет включён только после появления подтверждённых тарифов.
+              Пока менеджер письменно фиксирует индивидуальные условия после проверки груза.
             </p>
           </div>
 
@@ -181,7 +166,7 @@ export function Calculator({ onSendAsLead }: CalculatorProps) {
             }
             className="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3.5 text-base font-semibold text-surface shadow-card transition-colors duration-200 hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Отправить как заявку
+            Перенести в заявку
           </button>
         </div>
       </div>
