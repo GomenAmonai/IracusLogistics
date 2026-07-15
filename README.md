@@ -33,7 +33,7 @@ MVP-упрощения и техдолг — [`docs/tech-debt.md`](./docs/tech-d
 
 ```
 backend/
-  cmd/{api,migrate,createmanager}   # точки входа и CLI
+  cmd/{api,migrate,createmanager,seed-demo}   # точки входа и локальные CLI
   internal/
     domain/        # сущности: Manager, Lead, Client, Shipment, Message, ShipmentStatusEvent, Payment, Notification
     repository/    # GORM-репозитории
@@ -73,6 +73,25 @@ go run ./cmd/api                     # http://localhost:8080 (без TELEGRAM_BO
 cd ../frontend
 npm install
 npm run dev                          # :5173 — лендинг, /webapp.html — Mini App, /manager.html — панель; /api → :8080
+```
+
+Для локальной демонстрации полного сценария после миграций и запуска API можно создать
+идемпотентный набор вымышленных данных:
+
+```bash
+cd backend
+go run ./cmd/seed-demo
+```
+
+Команда работает только в `APP_ENV=development`, создаёт/обновляет demo-менеджера, клиента,
+груз, переписку и платёж, затем печатает локальные ссылки и данные для входа. Повторный запуск
+не дублирует demo-сущности.
+
+Когда API и frontend запущены, весь demo-контур можно проверить одной командой (требуются
+`curl` и `jq`):
+
+```bash
+./scripts/smoke-demo.sh
 ```
 
 Без `TELEGRAM_BOT_TOKEN` бот и авторизация WebApp по `initData` выключены; для отладки UI
