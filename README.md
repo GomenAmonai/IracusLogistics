@@ -218,6 +218,8 @@ Repository-тесты используют PostgreSQL на `localhost:5433`; б�
 ## Документы
 
 - [`docs/ROADMAP.md`](./docs/ROADMAP.md) — направление, порядок работ и условия релиза.
+- [`docs/business-model.md`](./docs/business-model.md) — целевой B2B-процесс, роли и назначение интерфейсов.
+- [`docs/business-decisions.md`](./docs/business-decisions.md) — принятые решения и вопросы, которые ещё нужно закрыть.
 - [`docs/architecture.md`](./docs/architecture.md) — доменная модель и границы MVP.
 - [`docs/tech-debt.md`](./docs/tech-debt.md) — осознанные MVP-упрощения и техдолг.
 - [`docs/notification-matrix.md`](./docs/notification-matrix.md) — обязательные уведомления и канал доставки.
